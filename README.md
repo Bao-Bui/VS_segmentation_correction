@@ -26,7 +26,7 @@ Github: https://github.com/MIC-DKFZ/nnUNet
   * For more information, check out: https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/setting_up_paths.md
 3. Set up the folder containing the T1 scans to be run inference on
   * Although nnU-net V2 supports many file formats, it is conventional to run inferences on NIfTI files. NIfTI conversion from DICOM files can be done using `3DSlicer` or `dcm2nii`.
-  * For models that were trained on only one imaging modality (the one used below), imaging files in the `input_folder` must follow the naming format of {case_identifier}_0000.nii.gz file. For example:
+  * For models that were trained on only one imaging modality (e.g., the one used below), imaging files in the `input_folder` must have the following naming format--`{case_identifier}_0000.nii.gz`. For example:
 ```
  input_folder
  ├── VS_001_0000.nii.gz
