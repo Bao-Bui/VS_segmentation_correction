@@ -16,6 +16,7 @@ This model runs on the framework of nnU-netv2, whose Github repository and origi
 ```
 Original Paper: Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021).
 nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nature methods, 18(2), 203-211.
+
 Github: https://github.com/MIC-DKFZ/nnUNet
 ```
 2. Set up the nnunet environments in the terminal
