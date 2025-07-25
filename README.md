@@ -47,11 +47,11 @@ Github: https://github.com/MIC-DKFZ/nnUNet
   * For more information on modality indicators (or channel names as nnU-net V2 calls it), check out: https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/dataset_format.md
 5. Run the following inference prompt in the terminal
 ```
-nnUNetv2_predict -d Dataset920_VSMCRCSCGKT1 -i path_to_input_folder -o path_to_output_folder -f  0 1 2 3 4 -tr nnUNetTrainer -c 3d_fullres -p nnUNetPlan
+nnUNetv2_predict -d Dataset920_VSMCRCSCGKT1 -i path_to_input_folder -o path_to_tumor_output_folder -f  0 1 2 3 4 -tr nnUNetTrainer -c 3d_fullres -p nnUNetPlan
 ```
-* Assuming the input folder looks like the example above, you'll find the automated segmentation tumor masks in the output_folder in the following format if the inference was run successfully:
+Assuming the input folder looks like the example above, you'll find the automated segmentation tumor masks in the tumor_output_folder in the following format if inference was run successfully:
 ```
- output_folder
+ tumor_output_folder
  ├── VS_001.nii.gz
  ├── VS_002.nii.gz
  ├── VS_003.nii.gz
@@ -83,6 +83,12 @@ pip install -e .
 3. Code modifications
   * For torch>=2.6, the default for `torch.load()` is `weights_only = True`. If that is the case, make sure to add `weights_only = False` to the `torch.load()` function in `nnUnet/nnunet/training/model_restore.py`. For more information, see https://docs.pytorch.org/docs/stable/notes/serialization.html#weights-only
   * If you have a Windows machine that uses the `spawn` start method, a lambda function is not pickle-able. On Linux/macOS this never shows up because these OS's use `fork` (which just copies the entire memory without pickling). One way to fix this is to replace the `lambda x: x` function in `nnUNet\nnunet\training\network_training\nnUNetTrainerV2.py` and `nnUNet\nnunet\network_architecture\generic_UNet.py` with `torch.nn.Identity()` which basically does the same thing.
+  * Similarly in `nnUNet\nnunet\utilities\nd_softmax.py`, the `softmax_helper = lambda x: F.softmax(x, 1)` should be replaced with the function below. There are more lambda functions throughout the package, feel free to make changes if needed, but the aforementioned modifications should fix the issues for Windows users.
+```
+def softmax_helper(x):
+    import torch
+    return torch.nn.functional.softmax(x, 1)
+```
 4. Set up the nnunet environments in the terminal
   * `nnUNet_raw_data_base` is where nnU-net V1 stores data for training and testing. You must follow the folder structure provided below.
     * Since we are not training, `imageTr` and `labelsTr` can be empty.
@@ -118,11 +124,11 @@ RESULTS_FOLDER/nnUNet/
 
 5. Run the following inference prompt in the terminal
 ```
-nnUNet_predict -i nnUNet1_raw_data_base/nnUNet_raw_data/Task600_Brainstem/imagesTs -o path_to_output_folder -tr nnUNetTrainerV2 -m 3d_fullres -p nnUNetPlansv2.1_24GB -t Task600_Brainstem
+nnUNet_predict -i nnUNet1_raw_data_base/nnUNet_raw_data/Task600_Brainstem/imagesTs -o path_to_brainstem_output_folder -tr nnUNetTrainerV2 -m 3d_fullres -p nnUNetPlansv2.1_24GB -t Task600_Brainstem
 ```
-* Assuming the input folder looks like the example above, you'll find the automated segmentation tumor masks in the output_folder in the following format if the inference was run successfully:
+Assuming the input folder looks like the example above, you'll find the automated segmentation brainstem masks in the brainstem_output_folder in the following format if inference was run successfully:
 ```
- output_folder
+ brainstem_output_folder
  ├── VS_001.nii.gz
  ├── VS_002.nii.gz
  ├── VS_003.nii.gz
