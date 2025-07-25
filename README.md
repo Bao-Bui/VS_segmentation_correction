@@ -143,7 +143,7 @@ The logic of the algorithm is as follows:
 3. Label connected components in tumor mask:
    * Keep every component whose z-coordinate range intersects either z_medulla_pons_median or z_medulla_max
    * If ≥1 components satisfy, pick the one whose x-centroid is closest to mid-line
-   * Else, pick the component whose lowest slice is nearest to the most-superior of the medulla (z_medulla_max)
+   * Else, pick the component whose lowest slice is nearest to the most-superior slice of the medulla (z_medulla_max)
 5.  Save corrected mask
 
 Users have the options of running correction on individual files or in batch-folders. For Python usage:
