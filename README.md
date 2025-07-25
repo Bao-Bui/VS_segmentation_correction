@@ -139,7 +139,7 @@ Assuming the input folder looks like the example above, you'll find the automate
 ## Step 3: False Positive Correction
 The logic of the algorithm is as follows:
 1. Find the z-coordinate of the most-superior slice that still contains medulla
-2. Find all z-coordinates where **both** medulla & pons are present and take the median thereof. The possible z-coordinate range for the IAC is  [z_medulla_pons_median , z_medulla_max)
+2. Find all z-coordinates where both medulla and pons are present and take the median thereof. The possible z-coordinate range for the IAC is  [z_medulla_pons_median , z_medulla_max)
 3. Label connected components in tumor mask:
    * Keep every component whose z-coordinate range intersects either z_medulla_pons_median or z_medulla_max
    * If ≥1 components satisfy, pick the one whose x-centroid is closest to mid-line
