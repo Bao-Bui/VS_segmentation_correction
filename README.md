@@ -62,7 +62,7 @@ Assuming the input folder looks like the example above, you'll find the automate
  ├── VS_003.nii.gz
  ├── ...
 ```
-This specific T1 model from Kujawa et al. gives the best results according to the sperformance metrics reported in their paper.
+This specific T1 model from Kujawa et al. gives the best results according to the performance metrics reported in their paper.
 
 ## Step 2: Brainstem Segmentation
 The model used was that of Gesierich et al., 2025.
