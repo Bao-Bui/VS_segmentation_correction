@@ -7,18 +7,23 @@ Notes:
 ## Step 1: VS Segmentation
 The model used was that of Kujawa et al., 2024.
 ```
-citation
+Kujawa, A., Dorent, R., Connor, S., Thomson, S., Ivory, M., Vahedi, A., Guilhem, E., Wijethilake, N., Bradford, R., Kitchen, N., Bisdas, S., Ourselin, S., Vercauteren, T., & Shapey, J. (2024).
+Deep learning for automatic segmentation of vestibular schwannoma: A retrospective study from multi-center routine MRI. Frontiers in Computational Neuroscience, 18, 1365727.
+https://doi.org/10.3389/fncom.2024.1365727
+
 ```
 Below is a step-by-step instruction on how to implement this model:
 1. Download and unzip `MC-RC+SC-GK-models.zip` from the following repository:
 ```
 Aaron Kujawa, Dorent, R., Wijethilake, N., Connor, S., Thomson, S., Ivory, M., Bradford, R., Kitchen, N., Bisdas, S., Ourselin, S., Vercauteren, T., & Shapey, J. (2023).
-Deep Learning for Automatic Segmentation of Vestibular Schwannoma: A Retrospective Study from Multi-Centre Routine MRI -- Deep learning models. Zenodo. https://doi.org/10.5281/zenodo.10363647
+Deep Learning for Automatic Segmentation of Vestibular Schwannoma: A Retrospective Study from Multi-Centre Routine MRI -- Deep learning models. Zenodo.
+https://doi.org/10.5281/ZENODO.10363647
 ```
 This model runs on the framework of nnU-net V2, whose Github repository and original paper are as follows
 ```
-Original Paper: Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021).
-nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nature methods, 18(2), 203-211.
+Original Paper: Isensee, F., Jaeger, P. F., Kohl, S. A. A., Petersen, J., & Maier-Hein, K. H. (2021).
+nnU-Net: A self-configuring method for deep learning-based biomedical image segmentation. Nature Methods, 18(2), 203–211.
+https://doi.org/10.1038/s41592-020-01008-z
 
 Github: https://github.com/MIC-DKFZ/nnUNet
 ```
@@ -61,18 +66,21 @@ Assuming the input folder looks like the example above, you'll find the automate
 ## Step 2: Brainstem Segmentation
 The model used was that of Gesierich et al., 2025.
 ```
-citation
+Gesierich, B., Sander, L., Pirpamer, L., Meier, D. S., Ruberte, E., Amann, M., Sinnecker, T., Huck, A., De Leeuw, F., Maillard, P., Moy, S., Helmer, K. G., MarkVCID Consortium, Levin, J., Höglinger, G. U., PROMESA Study Group, Kühne, M., Bonati, L. H., Kuhle, J., … Duering, M. (2025).
+Extended Technical and Clinical Validation of Deep Learning‐Based Brainstem Segmentation for Application in Neurodegenerative Diseases. Human Brain Mapping, 46(3), e70141.
+https://doi.org/10.1002/hbm.70141
 ```
 Below is a step-by-step instruction on how to implement this model:
 1. Download and extract `nnUNet_brainstem.tar.gz` from the following repository:
 ```
-Gesierich, B., & Duering, M. (2024). Deep learning-based brainstem segmentation: nnU-Net model (1.0.2). Zenodo. https://doi.org/10.5281/zenodo.13323293
+Gesierich, B., & Duering, M. (2024). Deep learning-based brainstem segmentation: nnU-Net model (Version 1.0.2). Zenodo.
+https://doi.org/10.5281/ZENODO.13323293
 ```
 This model runs on the framework of nnU-net V1. See Github repository: https://github.com/Gitsamshi/nnUNet-1
 2. Install nnU-net V1.7.1 on your machine
   * nnU-net V1 and nnU-net2 can be installed concurrently on a local machine (https://github.com/MIC-DKFZ/nnUNet/releases). However, to avoid dependecy issues, it is recommended that they are built in different virtual environments.
   * Again, make sure you download Pytorch first (see above) in the new virtual environment.
-  * Because nnU-net V1.7.1 is deprecated, your python wheel may have trouble resolving dependencies. Furthermore, you will have to make some minor modifications to the source code later (see below). Thus, it is recommended that you clone the Github repository onto your local machine and install it from there. This requires that you have Git installed on your local machine (https://git-scm.com/downloads). Below is an example on how to this using pip, although conda works as well:
+  * Because nnU-net V1.7.1 is deprecated, your python wheel may have trouble resolving dependencies. Furthermore, you will have to make some minor modifications to the source code later (see below). Thus, it is recommended that you clone the Github repository onto your local machine and install it from there. This requires that you have Git installed on your local machine (https://git-scm.com/downloads). Below is an example on how to do this using pip, although conda works as well:
 ```
 pip3 -m venv nnunet1_env
 cd nnunet1_env
