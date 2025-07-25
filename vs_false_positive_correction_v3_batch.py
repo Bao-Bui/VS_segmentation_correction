@@ -21,7 +21,6 @@ postprocess_folder/        ← script outputs cleaned masks here
     VS_001_0000.nii.gz
     VS_002_0000.nii.gz
     ...
-
 """
 
 import argparse
