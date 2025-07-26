@@ -78,6 +78,7 @@ Gesierich, B., & Duering, M. (2024). Deep learning-based brainstem segmentation:
 https://doi.org/10.5281/ZENODO.13323293
 ```
 This model runs on the framework of nnU-net V1. See Github repository: https://github.com/Gitsamshi/nnUNet-1
+
 2. Install nnU-net V1.7.1 on your machine
   * nnU-net V1 and nnU-net2 can be installed concurrently on a local machine (https://github.com/MIC-DKFZ/nnUNet/releases). However, to avoid dependecy issues, it is recommended that they are built in different virtual environments.
   * Again, make sure you download Pytorch first (see above) in the new virtual environment.
