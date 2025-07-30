@@ -156,6 +156,9 @@ The logic of the algorithm is as follows:
    * Else, pick the component whose lowest slice is nearest to the most-superior slice of the medulla (z_medulla_max)
 5.  Save corrected mask
 
+See example:
+<img width="1920" height="1037" alt="image" src="https://github.com/user-attachments/assets/06f3b6f9-439a-400f-9f56-f645dbce0711" />
+
 Users have the options of running correction on individual files or in batch-folders. For Python usage:
 ```
 python vs_false_positive_correction_v3.py -h
