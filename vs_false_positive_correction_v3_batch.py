@@ -1,12 +1,23 @@
 #!/usr/bin/env python3
 """
-batch_correct_vs_masks.py
--------------------------
-
 Post-process a *folder* of auto-segmented vestibular-schwannoma masks by
 removing false-positive components, using each patient’s brain-stem
 labels (midbrain=1, pons=2, medulla=3) as anatomical reference.
 
+Folder layout (example)
+-----------------------
+tumor_output_folder/
+    VS_001.nii.gz
+    VS_002.nii.gz
+    ...
+brainstem_output_folder/
+    VS_001.nii.gz     
+    VS_002.nii.gz
+    ...
+postprocess_folder/        
+    VS_001.nii.gz
+    VS_002.nii.gz
+    ...
 """
 
 import argparse
@@ -19,7 +30,7 @@ import numpy as np
 import scipy.ndimage as ndi
 
 
-# ─────────────────────────── utility loaders ────────────────────────────
+# ─────────────────────────── Utility Loaders ────────────────────────────
 def load_bool(path: Path):
     img = nib.load(str(path))
     return img.get_fdata().astype(bool), img
@@ -30,7 +41,7 @@ def load_int(path: Path):
     return img.get_fdata().astype(np.int16)
 
 
-# ───────────────────────── brain-stem helpers ───────────────────────────
+# ───────────────────────── Brainstem Helpers ───────────────────────────
 def z_medulla_max(bs: np.ndarray) -> int:
     zs = np.where(bs == 3)[2]
     if zs.size == 0:
@@ -48,7 +59,7 @@ def z_medulla_pons_overlap(bs: np.ndarray) -> int:
     return int(0.5 * (z_med.max() + z_pon.min()))
 
 
-# ───────────────────── tumour component helpers ─────────────────────────
+# ───────────────────── Tumor Component Helpers ─────────────────────────
 def connected_components(mask: np.ndarray):
     labeled, n = ndi.label(mask)
     slices = ndi.find_objects(labeled)
@@ -88,7 +99,7 @@ def choose_component(slices, labeled, iac_z_low, iac_z_high, mid_x):
     return best
 
 
-# ───────────────────────── single-case routine ──────────────────────────
+# ───────────────────────── Single-Case Processing ──────────────────────────
 def process_case(tumor_path: Path, brain_path: Path, out_path: Path):
     try:
         tumor_mask, tumor_img = load_bool(tumor_path)
@@ -110,23 +121,23 @@ def process_case(tumor_path: Path, brain_path: Path, out_path: Path):
         out_path.parent.mkdir(parents=True, exist_ok=True)
         nib.save(nib.Nifti1Image(cleaned, tumor_img.affine, tumor_img.header),
                  out_path)
-        return f"{tumor_path.name}  ✔"
+        return f"{tumor_path.name}  done"
     except Exception as e:
-        return f"{tumor_path.name}  ✖  ({e})"
+        return f"{tumor_path.name}  failed  ({e})"
 
 
-# ──────────────────────────── main (batch) ──────────────────────────────
+# ──────────────────────────── Main ──────────────────────────────
 def main(args):
-    tumor_dir  = Path(args.tumor_dir)
-    brain_dir  = Path(args.brainstem_dir)
-    out_dir    = Path(args.out_dir)
+    tumor_dir  = Path(args.tumor)
+    brain_dir  = Path(args.brainstem)
+    out_dir    = Path(args.out)
 
     cases = []
     for tum_f in sorted(tumor_dir.glob("*.nii.gz")):
-        pid     = tum_f.name.replace(".nii.gz", "")    
+        pid     = tum_f.name.replace(".nii.gz", "")
         brain_f = brain_dir / f"{pid}.nii.gz"
         if not brain_f.exists():
-            print(f"⚠  no brain-stem mask for {pid}, skipping")
+            print(f"No brain-stem mask for {pid}, skipping")
             continue
         out_f   = out_dir / f"{pid}.nii.gz"
         cases.append((tum_f, brain_f, out_f))
@@ -145,11 +156,11 @@ def main(args):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Batch false-positive "
                                              "correction for VS masks")
-    ap.add_argument("--tumor_dir",      required=True,
+    ap.add_argument("--tumor",      required=True,
                     help="Folder with raw VS+FP masks (*.nii.gz)")
-    ap.add_argument("--brainstem_dir",  required=True,
+    ap.add_argument("--brainstem",  required=True,
                     help="Folder with labelled brain-stem masks (*.nii.gz)")
-    ap.add_argument("--out_dir",        required=True,
+    ap.add_argument("--out",        required=True,
                     help="Destination folder for cleaned masks")
     ap.add_argument("--workers", type=int, default=1,
                     help="Parallel workers (default 1 = serial)")
