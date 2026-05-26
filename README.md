@@ -160,6 +160,5 @@ See example:
 
 Users have the options of running correction on individual files or in batch-folders. For Python usage:
 ```
-python vs_false_positive_correction_v3.py -h
-python vs_false_positive_correction_v3_batch.py -h
+python vs_false_positive_correction.py -h
 ```
