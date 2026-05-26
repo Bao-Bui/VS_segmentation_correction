@@ -80,7 +80,7 @@ https://doi.org/10.5281/ZENODO.13323293
 This model runs on the framework of nnU-net V1. See Github repository: https://github.com/Gitsamshi/nnUNet-1
 
 2. Install nnU-net V1.7.1 on your machine
-  * nnU-net V1 and nnU-net2 can be installed concurrently on a local machine (https://github.com/MIC-DKFZ/nnUNet/releases). However, to avoid dependecy issues, it is recommended that they are built in different virtual environments.
+  * nnU-net V1 and nnU-net2 can be installed concurrently on a local machine (https://github.com/MIC-DKFZ/nnUNet/releases). To avoid dependecy issues, they may be built in different virtual environments. Nevertheless, I managed to run both in the same virtual environment.
   * Again, make sure you download Pytorch first (see above) in the new virtual environment.
   * Because nnU-net V1.7.1 is deprecated, your python wheel may have trouble resolving dependencies. Furthermore, you will have to make some minor modifications to the source code later (see below). Thus, it is recommended that you clone the Github repository onto your local machine and install it from there. This requires that you have Git installed on your local machine (https://git-scm.com/downloads). Below is an example on how to do this using pip, although conda works as well:
 ```
