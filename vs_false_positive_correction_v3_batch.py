@@ -7,20 +7,6 @@ Post-process a *folder* of auto-segmented vestibular-schwannoma masks by
 removing false-positive components, using each patient’s brain-stem
 labels (midbrain=1, pons=2, medulla=3) as anatomical reference.
 
-Folder layout (example)
------------------------
-tumor_output_folder/
-    VS_001.nii.gz
-    VS_002.nii.gz
-    ...
-brainstem_output_folder/
-    VS_001_0000.nii.gz     ← same case-ID, extra '_0000' ok
-    VS_002_0000.nii.gz
-    ...
-postprocess_folder/        ← script outputs cleaned masks here
-    VS_001_0000.nii.gz
-    VS_002_0000.nii.gz
-    ...
 """
 
 import argparse
@@ -137,7 +123,7 @@ def main(args):
 
     cases = []
     for tum_f in sorted(tumor_dir.glob("*.nii.gz")):
-        pid     = tum_f.name.replace(".nii.gz", "")      # ← fixed
+        pid     = tum_f.name.replace(".nii.gz", "")    
         brain_f = brain_dir / f"{pid}.nii.gz"
         if not brain_f.exists():
             print(f"⚠  no brain-stem mask for {pid}, skipping")
