@@ -2,7 +2,6 @@
 Notes: 
 * All the items below were performed on a Windows 10 machine.
 * The following procedure only works for contrast-enhanced-T1-weghted scans. Although one can perform tumor segmentation on T2 scans using the model provided in `Step 1`, the brainstem segmentation model used in `Step 2` was trained on only T1 images.
-* You're more than welcome to create a Docker container of the following procedures! Please let me know, actually :)
 
 ## Step 1: VS Segmentation
 The model used was that of Kujawa et al., 2024.
