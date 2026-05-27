@@ -91,14 +91,14 @@ pip install -e .
 ```
 3. Code modifications
   * Depending on your nnU-Net version, you may have the following issue. For torch>=2.6, the default for `torch.load()` is `weights_only = True`. If that is the case, make sure to add `weights_only = False` to the `torch.load()` function in `nnUnet/nnunet/training/model_restore.py`. For more information, see https://docs.pytorch.org/docs/stable/notes/serialization.html#weights-only.
-  * If you have a Windows machine that uses the `spawn` start method, a lambda function is not pickle-able. On Linux/macOS this never shows up because these OS's use `fork` (which just copies the entire memory without pickling). One way to fix this is to replace the `lambda x: x` function in `nnUNet/nnunet/training/network_training/nnUNetTrainerV2.py` and `nnUNet/nnunet/network_architecture/generic_UNet.py` with `torch.nn.Identity()` which basically does the same thing.
+  * For Windows machines that use the `spawn` start method, lambda functions is not pickle-able. This is not an issue for Linux/macOS because these OS's use `fork` (which just copies the entire memory without pickling). One way to fix this is to replace the `lambda x: x` function in `nnUNet/nnunet/training/network_training/nnUNetTrainerV2.py` and `nnUNet/nnunet/network_architecture/generic_UNet.py` with `torch.nn.Identity()` which basically does the same thing.
   * Similarly in `nnUNet/nnunet/utilities/nd_softmax.py`, `softmax_helper = lambda x: F.softmax(x, 1)` should be replaced with the function below. 
 ```
 def softmax_helper(x):
     import torch
     return torch.nn.functional.softmax(x, 1)
 ```
-  * There are more lambda functions throughout the package. Feel free to make changes if needed, but the aforementioned modifications should fix the issues for Windows users.
+  * There are more lambda functions throughout the package. Feel free to make changes if needed, but the aforementioned modifications should resolve the issues for Windows users.
 4. Set up the nnunet environments in the terminal
   * `nnUNet_raw_data_base` is where nnU-net V1 stores data for training and testing. You must follow the folder structure provided below.
     * Since we are not training, `imageTr` and `labelsTr` can be empty.
