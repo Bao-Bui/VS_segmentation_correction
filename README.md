@@ -146,17 +146,10 @@ Assuming the input folder looks like the example above, you'll find the automate
 ```
 
 ## Step 3: False Positive Correction
-The logic of the algorithm is as follows:
-1. Find the z-coordinate of the most-superior slice that still contains medulla
-2. Find all z-coordinates where both medulla and pons are present and take the median thereof. The possible z-coordinate range for the IAC is  [z_medulla_pons_median , z_medulla_max]
-3. Label connected components in tumor mask:
-   * Keep every component whose z-coordinate range intersects either z_medulla_pons_median or z_medulla_max
-   * If ≥1 components satisfy, pick the one whose x-centroid is closest to mid-line
-   * Else, pick the component whose lowest slice is nearest to the most-superior slice of the medulla (z_medulla_max)
-5.  Save corrected mask
+See examples of false positive and correction:
+<img width="3600" height="3200" alt="VS_fig" src="https://github.com/user-attachments/assets/2be390ef-971e-4d45-b801-6a4452b052b9" />
 
-See example:
-<img width="1920" height="1037" alt="image" src="https://github.com/user-attachments/assets/06f3b6f9-439a-400f-9f56-f645dbce0711" />
+<img width="1086" height="1448" alt="6a646e0c-d5f6-4f29-a898-4a69db13bb78" src="https://github.com/user-attachments/assets/12226df4-73de-4cf6-8a2c-2f961d9bfef0" />
 
 Users have the options of running correction on individual files or in batch-folders. For Python usage:
 ```
