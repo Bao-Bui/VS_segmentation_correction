@@ -146,12 +146,15 @@ Assuming the input folder looks like the example above, you'll find the automate
 ```
 
 ## Step 3: False Positive Correction
-See examples of false positive and correction:
+Examples of false positive and correction:
+
+
 <img width="3600" height="3200" alt="VS_fig" src="https://github.com/user-attachments/assets/2be390ef-971e-4d45-b801-6a4452b052b9" />
 
-<img width="1086" height="1448" alt="6a646e0c-d5f6-4f29-a898-4a69db13bb78" src="https://github.com/user-attachments/assets/12226df4-73de-4cf6-8a2c-2f961d9bfef0" />
 
-Users have the options of running correction on individual files or in batch-folders. For Python usage:
+For usage: python vs_false_positive_correction.py -h
+
+
+<img width="1122" height="1402" alt="VS_false_positive_correction_logic_connected" src="https://github.com/user-attachments/assets/547e496e-afee-4dd7-9801-5ecaf62d4365" />
 ```
-python vs_false_positive_correction.py -h
 ```
