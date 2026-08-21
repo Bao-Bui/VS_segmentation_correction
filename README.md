@@ -146,15 +146,13 @@ Assuming the input folder looks like the example above, you'll find the automate
 ```
 
 ## Step 3: False Positive Correction
+For usage: python vs_false_positive_correction.py -h
+
 Examples of false positive and correction:
 
 
 <img width="3600" height="3200" alt="VS_fig" src="https://github.com/user-attachments/assets/2be390ef-971e-4d45-b801-6a4452b052b9" />
 
 
-For usage: python vs_false_positive_correction.py -h
-
 
 <img width="1122" height="1402" alt="VS_false_positive_correction_logic_connected" src="https://github.com/user-attachments/assets/547e496e-afee-4dd7-9801-5ecaf62d4365" />
-```
-```
