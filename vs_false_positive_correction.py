@@ -233,30 +233,51 @@ def image_midline_world_x(shape, affine: np.ndarray) -> float:
     return float(center_world[0])
 
 
-def choose_component_complete(slices, labeled,
-                              iac_z_low, iac_z_high, mid_x):
-    """Original component-selection logic for pons+medulla masks."""
+def choose_component_complete(
+    slices,
+    labeled,
+    pontomedullary_z,
+    medulla_z,
+    mid_x,
+):
+    z_lower, z_upper = sorted(
+        (float(pontomedullary_z), float(medulla_z))
+    )
+
     candidates = []
+
     for idx, sl in enumerate(slices, start=1):
         if sl is None:
             continue
-        z0, z1 = sl[2].start, sl[2].stop - 1
-        if (z0 <= iac_z_low <= z1) or (z0 <= iac_z_high - 1 <= z1):
+
+        z0 = sl[2].start
+        z1 = sl[2].stop - 1
+
+        # Retain components crossing either reference level.
+        if (z0 <= z_lower <= z1) or (z0 <= z_upper <= z1):
             candidates.append(idx)
 
     if candidates:
-        dists = [abs(centroid_x(labeled, lb) - mid_x) for lb in candidates]
-        return candidates[int(np.argmin(dists))]
+        return min(
+            candidates,
+            key=lambda lb: abs(centroid_x(labeled, lb) - mid_x),
+        )
 
-    # Original fallback: component whose lower z is nearest iac_z_high.
-    best, best_dist = None, np.inf
+    # Preserve the original medulla-based fallback.
+    best = None
+    best_dist = np.inf
+
     for idx, sl in enumerate(slices, start=1):
         if sl is None:
             continue
+
         z0 = sl[2].start
-        dist = abs(z0 - iac_z_high)
+        dist = abs(z0 - medulla_z)
+
         if dist < best_dist:
-            best, best_dist = idx, dist
+            best = idx
+            best_dist = dist
+
     return best
 
 
@@ -334,15 +355,17 @@ def process_case(tumor_path: Path, brain_path: Path, out_path: Path):
 
         if has_pons and has_medulla:
             # Complete enough for the original correction pathway.
-            z_high = z_medulla_max(brainstem)
-            z_low = z_medulla_pons_overlap(brainstem)
+            medulla_z = z_medulla_max(brainstem)
+            pontomedullary_z = z_medulla_pons_overlap(brainstem)
+            
             keep = choose_component_complete(
                 slcs,
                 labeled,
-                z_low,
-                z_high,
+                pontomedullary_z,
+                medulla_z,
                 mid_x=tumor_mask.shape[0] / 2,
             )
+
             mode = "standard pons+medulla reference"
 
         else:
