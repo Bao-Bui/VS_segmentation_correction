@@ -336,3 +336,120 @@ WORK_DIR/vs_pipeline_outputs/
 The size and diameter metrics are subsequently calculated from the corrected masks in `post_processed`.
 
 Users should inspect the SLURM `.out` and `.err` files after execution to confirm that each stage completed successfully. Because HPC environments differ substantially in module systems, filesystem organization, CUDA configuration, and SLURM resource definitions, `example_slurm_pipeline.sh` should be treated as a working example that can be adapted to the local computing environment rather than as a universal SLURM configuration.
+
+## Run the complete pipeline locally with Docker
+
+The Docker image processes contrast-enhanced T1 DICOM images through VS segmentation, brainstem segmentation, false-positive correction, measurements, and review DICOM export. Both trained models are bundled in the image.
+
+### 1. Pull the image
+
+Use Docker with Linux containers on an x86-64 machine. On Windows, run these commands in **WSL Bash** with Docker Desktop integration enabled.
+
+```bash
+IMAGE="ghcr.io/bao-bui/vs-pipeline:0.2.0"
+docker pull "$IMAGE"
+```
+
+The public image can be pulled without a GitHub login. GPU execution requires an NVIDIA GPU, a driver compatible with the image’s CUDA 13.0 runtime, and Docker GPU access. CPU execution uses the same image.
+
+### 2. Check the installation
+
+CPU check:
+
+```bash
+docker run --rm "$IMAGE" --check --device cpu --threads 8
+```
+
+GPU check:
+
+```bash
+docker run --rm --gpus all "$IMAGE" --check --device cuda --threads 2
+```
+
+These checks verify model-file availability, predictor imports, and a small device calculation. They do not load model checkpoints or run segmentation.
+
+### 3. Set input and output paths
+
+Use absolute paths and keep the output folder outside the input folder:
+
+```bash
+INPUT="/absolute/path/to/patient-dicoms"
+OUTPUT="/absolute/path/to/vs-pipeline-results"
+mkdir -p "$OUTPUT"
+```
+
+On Windows through WSL, a path such as `C:\Users\YOUR_USERNAME\Downloads\patient-dicoms` becomes `/mnt/c/Users/YOUR_USERNAME/Downloads/patient-dicoms`.
+
+Use one patient’s DICOM folder at a time. Input files are mounted read-only.
+
+### 4. Select the contrast-enhanced T1 series
+
+```bash
+docker run --rm \
+  --mount "type=bind,source=$INPUT,target=/input,readonly" \
+  --mount "type=bind,source=$OUTPUT,target=/output" \
+  "$IMAGE" --list-series
+```
+
+Copy the desired Series Instance UID from the listing:
+
+```bash
+SERIES_UID="REPLACE_WITH_SELECTED_SERIES_INSTANCE_UID"
+CASE="VS_CASE_001"
+```
+
+The case identifier controls output filenames; it does not anonymize DICOM metadata.
+
+### 5. Run the pipeline
+
+**GPU execution:**
+
+```bash
+set -o pipefail
+
+docker run --rm --gpus all --shm-size=2g \
+  --mount "type=bind,source=$INPUT,target=/input,readonly" \
+  --mount "type=bind,source=$OUTPUT,target=/output" \
+  "$IMAGE" \
+  --device cuda --threads 2 \
+  --case "$CASE" --series-uid "$SERIES_UID" \
+  2>&1 | tee "$OUTPUT/${CASE}_gpu_$(date +%Y%m%dT%H%M%S).log"
+```
+
+**CPU execution:**
+
+```bash
+set -o pipefail
+
+docker run --rm --cpus=8 --shm-size=2g \
+  --mount "type=bind,source=$INPUT,target=/input,readonly" \
+  --mount "type=bind,source=$OUTPUT,target=/output" \
+  "$IMAGE" \
+  --device cpu --threads 8 \
+  --case "$CASE" --series-uid "$SERIES_UID" \
+  2>&1 | tee "$OUTPUT/${CASE}_cpu_$(date +%Y%m%dT%H%M%S).log"
+```
+
+Adjust CPU allocation and thread count to match your machine. Both modes use all five folds of each model. No separate model mount is required.
+
+The image applies the legacy brainstem checkpoint-loading compatibility setting internally; users do not need to set `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD` manually.
+
+### 6. Review the outputs
+
+Every run creates a uniquely named case subfolder containing:
+
+| Output | Description |
+| --- | --- |
+| `dicom_results/` | Axial review DICOMs and a separate montage series |
+| `dicom_results.zip` | Review DICOMs only |
+| `previews/montage.png` | Segmentation and measurement preview |
+| `nifti/raw_output/` | Raw VS mask |
+| `nifti/brainstem/` | Brainstem label map |
+| `nifti/post_processed/` | Corrected mask, or unchanged mask if selection is unresolved |
+| `report.json` | Status, component information, volume, and diameters |
+| `timings.json` | Processing times |
+| `execution.json` | Device and thread configuration |
+
+Measurements include volume in cm³ and maximum internal-chord diameters in the axial, sagittal, and coronal planes.
+
+Inspect the report, log, and overlays in a DICOM viewer. When component selection fails, the pipeline can still export raw component volumes with **“selection unresolved.”** A generated ZIP alone does not confirm successful correction.
