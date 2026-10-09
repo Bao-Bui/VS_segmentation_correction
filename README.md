@@ -88,7 +88,7 @@ cd nnUNet
 pip install -e .
 ```
 ### 3. Code modifications (Windows only)
-  * Depending on your nnU-Net version, you may have the following issue. For torch>=2.6, the default for `torch.load()` is `weights_only = True`. If that is the case, make sure to add `weights_only = False` to the `torch.load()` function in `nnUnet/nnunet/training/model_restore.py`. For more information, see https://docs.pytorch.org/docs/stable/notes/serialization.html#weights-only.
+  * Depending on your nnU-Net version, you may have the following issue. For torch>=2.6, the default for `torch.load()` is `weights_only = True`. If that is the case, you can add `weights_only = False` to the `torch.load()` function in `nnUnet/nnunet/training/model_restore.py` to follow the model developers' configuration (https://github.com/miac-research/MARS-brainstem/blob/ef51c7b4cc655dde5b75fb82fed2634c0608708e/nnunet/Dockerfile). For more information, see https://docs.pytorch.org/docs/stable/notes/serialization.html#weights-only.
   * For Windows machines that use the `spawn` start method, lambda functions is not pickle-able. This is not an issue for Linux/macOS because these OS's use `fork` (which just copies the entire memory without pickling). One way to fix this is to replace the `lambda x: x` function in `nnUNet/nnunet/training/network_training/nnUNetTrainerV2.py` and `nnUNet/nnunet/network_architecture/generic_UNet.py` with `torch.nn.Identity()` which basically does the same thing.
   * Similarly in `nnUNet/nnunet/utilities/nd_softmax.py`, `softmax_helper = lambda x: F.softmax(x, 1)` should be replaced with the function below. 
 ```
