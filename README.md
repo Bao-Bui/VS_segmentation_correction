@@ -339,70 +339,87 @@ Users should inspect the SLURM `.out` and `.err` files after execution to confir
 
 ## Run the complete pipeline locally with Docker
 
-The Docker image processes contrast-enhanced T1 DICOM images through VS segmentation, brainstem segmentation, false-positive correction, measurements, and review DICOM export. Both trained models are bundled in the image.
+The image processes contrast-enhanced T1-weighted DICOM images through VS segmentation, brainstem segmentation, false-positive correction, measurements, and review DICOM generation. Both trained models and their dependencies are included.
 
 ### 1. Pull the image
 
-Use Docker with Linux containers on an x86-64 machine. On Windows, run these commands in **WSL Bash** with Docker Desktop integration enabled.
+Use Docker with Linux containers on an x86-64 machine. On Windows, run these commands in WSL Bash with Docker Desktop integration enabled.
 
 ```bash
-IMAGE="ghcr.io/bao-bui/vs-pipeline:0.2.0"
+IMAGE="ghcr.io/bao-bui/vs-pipeline:0.2.2"
 docker pull "$IMAGE"
 ```
 
-The public image can be pulled without a GitHub login. GPU execution requires an NVIDIA GPU, a driver compatible with the image’s CUDA 13.0 runtime, and Docker GPU access. CPU execution uses the same image.
+CPU and GPU execution use the same image. GPU execution requires a compatible NVIDIA GPU and driver, with Docker GPU access configured for the image's CUDA 13.0 runtime.
 
 ### 2. Check the installation
 
-CPU check:
+CPU:
 
 ```bash
 docker run --rm "$IMAGE" --check --device cpu --threads 8
 ```
 
-GPU check:
+GPU:
 
 ```bash
-docker run --rm --gpus all "$IMAGE" --check --device cuda --threads 2
+docker run --rm --gpus all \
+  "$IMAGE" --check --device cuda --threads 2
 ```
 
 These checks verify model-file availability, predictor imports, and a small device calculation. They do not load model checkpoints or run segmentation.
 
 ### 3. Set input and output paths
 
-Use absolute paths and keep the output folder outside the input folder:
+Use absolute paths. Process one patient's DICOM images at a time, and keep the results outside the input directory.
 
 ```bash
 INPUT="/absolute/path/to/patient-dicoms"
-OUTPUT="/absolute/path/to/vs-pipeline-results"
-mkdir -p "$OUTPUT"
+RESULTS="/absolute/path/to/vs-pipeline-results"
+CASE="VS_CASE_001"
+
+mkdir -p "$RESULTS"
+OUTPUT="$(mktemp -d "$RESULTS/${CASE}_XXXXXX")"
 ```
 
-On Windows through WSL, a path such as `C:\Users\YOUR_USERNAME\Downloads\patient-dicoms` becomes `/mnt/c/Users/YOUR_USERNAME/Downloads/patient-dicoms`.
+The output directory must be empty when the pipeline starts. Create a new output directory for each run.
 
-Use one patient’s DICOM folder at a time. Input files are mounted read-only.
+On Windows through WSL, for example:
+
+```bash
+INPUT="/mnt/c/Users/YOUR_USERNAME/Downloads/patient-dicoms"
+RESULTS="/mnt/c/Users/YOUR_USERNAME/Downloads/vs-pipeline-results"
+CASE="VS_CASE_001"
+
+mkdir -p "$RESULTS"
+OUTPUT="$(mktemp -d "$RESULTS/${CASE}_XXXXXX")"
+```
 
 ### 4. Select the contrast-enhanced T1 series
+
+List the available DICOM series:
 
 ```bash
 docker run --rm \
   --mount "type=bind,source=$INPUT,target=/input,readonly" \
-  --mount "type=bind,source=$OUTPUT,target=/output" \
   "$IMAGE" --list-series
 ```
 
-Copy the desired Series Instance UID from the listing:
+Copy the desired Series Instance UID:
 
 ```bash
 SERIES_UID="REPLACE_WITH_SELECTED_SERIES_INSTANCE_UID"
-CASE="VS_CASE_001"
 ```
 
-The case identifier controls output filenames; it does not anonymize DICOM metadata.
+If the input contains only the intended T1ce series, you can omit `--series-uid` from the execution command.
+
+The case identifier labels the processing run; it does not anonymize DICOM metadata.
 
 ### 5. Run the pipeline
 
-**GPU execution:**
+Choose either GPU or CPU execution.
+
+GPU:
 
 ```bash
 set -o pipefail
@@ -411,12 +428,13 @@ docker run --rm --gpus all --shm-size=2g \
   --mount "type=bind,source=$INPUT,target=/input,readonly" \
   --mount "type=bind,source=$OUTPUT,target=/output" \
   "$IMAGE" \
+  --input /input --output /output \
   --device cuda --threads 2 \
   --case "$CASE" --series-uid "$SERIES_UID" \
-  2>&1 | tee "$OUTPUT/${CASE}_gpu_$(date +%Y%m%dT%H%M%S).log"
+  2>&1 | tee "${OUTPUT}.log"
 ```
 
-**CPU execution:**
+CPU:
 
 ```bash
 set -o pipefail
@@ -425,31 +443,65 @@ docker run --rm --cpus=8 --shm-size=2g \
   --mount "type=bind,source=$INPUT,target=/input,readonly" \
   --mount "type=bind,source=$OUTPUT,target=/output" \
   "$IMAGE" \
+  --input /input --output /output \
   --device cpu --threads 8 \
   --case "$CASE" --series-uid "$SERIES_UID" \
-  2>&1 | tee "$OUTPUT/${CASE}_cpu_$(date +%Y%m%dT%H%M%S).log"
+  2>&1 | tee "${OUTPUT}.log"
 ```
 
-Adjust CPU allocation and thread count to match your machine. Both modes use all five folds of each model. No separate model mount is required.
+Adjust CPU allocation and thread count to match your machine. Both modes use all five folds of each model. No separate model download or mount is required.
 
-The image applies the legacy brainstem checkpoint-loading compatibility setting internally; users do not need to set `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD` manually.
+The image handles legacy brainstem checkpoint loading internally.
+
+Temporary processing files use the container's filesystem by default, which needs sufficient free disk space. They are removed after a successful run. With `--rm`, any remaining container-local files are also removed when the container exits; the host log is retained.
 
 ### 6. Review the outputs
 
-Every run creates a uniquely named case subfolder containing:
+Results are written directly into four folders:
 
-| Output | Description |
+```text
+output/
+├── axial/
+│   └── IM_*.dcm
+├── montage/
+│   └── IM_*.dcm
+├── nifti/
+│   ├── input_mri.nii
+│   ├── vs_raw.nii
+│   ├── brainstem.nii
+│   └── vs_corrected.nii
+└── json/
+    ├── report.json
+    ├── timings.json
+    ├── export_metadata.json
+    └── ...
+```
+
+| Folder | Contents |
 | --- | --- |
-| `dicom_results/` | Axial review DICOMs and a separate montage series |
-| `dicom_results.zip` | Review DICOMs only |
-| `previews/montage.png` | Segmentation and measurement preview |
-| `nifti/raw_output/` | Raw VS mask |
-| `nifti/brainstem/` | Brainstem label map |
-| `nifti/post_processed/` | Corrected mask, or unchanged mask if selection is unresolved |
-| `report.json` | Status, component information, volume, and diameters |
-| `timings.json` | Processing times |
-| `execution.json` | Device and thread configuration |
+| `axial/` | Individual axial overlay DICOMs |
+| `montage/` | Multiplanar review montage DICOMs |
+| `nifti/` | Canonical input MRI and available segmentation masks, exported as uncompressed `.nii` files |
+| `json/` | Status, measurements, timings, source metadata, and other generated JSON files |
+
+No ZIP archives are produced. JSON filenames from intermediate stages include their source-directory names to avoid collisions.
 
 Measurements include volume in cm³ and maximum internal-chord diameters in the axial, sagittal, and coronal planes.
 
-Inspect the report, log, and overlays in a DICOM viewer. When component selection fails, the pipeline can still export raw component volumes with **“selection unresolved.”** A generated ZIP alone does not confirm successful correction.
+Review `json/report.json`, the execution log, and the overlays in a DICOM viewer. If automatic component selection is unresolved, the pipeline can still provide raw component volumes, but calipers are unavailable. The `vs_corrected.nii` filename alone does not establish that correction succeeded; check the reported status. The brainstem mask may be absent if brainstem prediction failed.
+
+### 7. Export a previously saved run without repeating inference
+
+For an older run containing `dicom_results/`, `nifti/`, and `report.json`:
+
+```bash
+PREVIOUS="/absolute/path/to/saved-run"
+OUTPUT="$(mktemp -d "$RESULTS/reexport_XXXXXX")"
+
+docker run --rm \
+  --mount "type=bind,source=$PREVIOUS,target=/previous,readonly" \
+  --mount "type=bind,source=$OUTPUT,target=/output" \
+  "$IMAGE" --export-only /previous --output /output
+```
+
+This copies the existing DICOMs and JSONs and decompresses available NIfTIs into the four-folder layout. It does not repeat inference or modify the saved run.
