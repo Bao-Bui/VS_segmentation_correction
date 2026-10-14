@@ -215,6 +215,77 @@ The later report also documents private test evaluation using submitted containe
 
 Verify the license attached to the actual downloaded release. Sources: [London TCIA](https://www.cancerimagingarchive.net/collection/vestibular-schwannoma-seg/), [MC-RC TCIA](https://www.cancerimagingarchive.net/collection/vestibular-schwannoma-mc-rc/), [2021 paper §3.2.4](https://arxiv.org/html/2201.02831#S3.SS2.SSS4), [2022 release](https://zenodo.org/records/6504722), and [2023 release protocol](https://arxiv.org/html/2506.12006v1#S2.SS4.SSS1).
 
+### Public TCIA annotations versus permitted challenge annotations
+
+For the London component, the original TCIA collection provides contours expressed in both T1 and T2 coordinate systems. Availability varies by structure: not every patient has a cochlea annotation. [TCIA collection description](https://www.cancerimagingarchive.net/collection/vestibular-schwannoma-seg/)
+
+The existence of these annotations elsewhere does not mean participants could use them during crossMoDA. The rules prohibited additional data, including the TCIA release, and additional annotations. Participants were allowed to adapt models using the provided target training images without manual labels. [Official 2021 rules](https://crossmoda-challenge.ml/challenge2021/#rules)
+
+This distinction concerns the London data; Tilburg is a separate cohort. Also, the challenge’s bilateral cochlea labels differ from the original clinical annotations, as explained in Section 6.
+
+### Were the source T1 and target-training T2 scans paired?
+
+**No—the released training sets contained different patients.**
+
+In crossMoDA 2021, the original 242-patient London cohort was partitioned into:
+
+| Patient group | Released images | Released manual labels |
+|---|---|---|
+| Source training: 105 patients | ceT1 | Yes |
+| Target training: 105 different patients | T2 | No |
+| Target validation: 32 different patients | T2 | No |
+
+These were separate patient groups, not matching T1/T2 examinations. [Patient partition, §3.2.1](https://arxiv.org/html/2201.02831#S3.SS2.SSS1)
+
+Both modalities existed in the underlying clinical examinations. However, participants were not supplied with their matching partners as paired training data. The organizers separately used the T2 images corresponding to the source T1 patients for a fully supervised comparison model. [Supervised comparison, §7.1](https://arxiv.org/html/2201.02831#S7.SS1)
+
+Therefore:
+
+```text
+Underlying clinical collection: paired T1/T2 examinations exist.
+
+Released challenge training:
+    labeled T1 from patient group A
+    unlabeled T2 from different patient group B
+```
+
+Do not describe target-training T2 scans as the corresponding T2 scans of the source-training T1 patients.
+
+### Target training and validation had different roles
+
+The target training images supplied examples of T2 appearance that algorithms could use during unsupervised adaptation.
+
+The validation images supplied a separate assessment set. Their labels were hidden from participants, but available to the organizers.
+
+**“Unannotated validation” describes participant access—not the absence of reference annotations.**
+
+### How validation worked without downloadable labels
+
+Participants did not need the reference masks locally:
+
+1. Run the model on the released validation images.
+2. Submit the predicted segmentation masks.
+3. Receive scores calculated against the organizers’ hidden manual masks.
+
+Validation therefore provided **quantitative feedback**, not simply visual quality control. Participants could compare configurations through returned scores.
+
+The 2021 paper documents automated Grand Challenge evaluation and a limit of one validation submission per day. [Challenge setup, §3.3](https://arxiv.org/html/2201.02831#S3.SS3)
+
+The official 2022 instructions explicitly require reporting validation leaderboard Dice and ASSD results. Visual inspection could supplement those measurements. [Submission instructions](https://crossmoda2022.grand-challenge.org/instructions-for-submission/)
+
+### How final testing differed
+
+For final testing, participants submitted their algorithm in a Docker container. Organizers ran it on private test images and compared its predictions with hidden ground truth. [Official testing instructions](https://crossmoda2022.grand-challenge.org/instructions-for-submission/)
+
+Thus:
+
+| Stage | What participants supplied | Evaluation |
+|---|---|---|
+| Validation | Predicted masks for released images | Organizer scoring against hidden labels |
+| Final testing | Containerized algorithm | Organizer-run inference and scoring on private data |
+
+A hidden-label benchmark can provide numerical performance results while keeping its reference masks private.
+
 ## 6. Annotation differences
 
 ### 6.1 Original TCIA annotation modality versus coordinate space
