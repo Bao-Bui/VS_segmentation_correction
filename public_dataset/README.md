@@ -272,64 +272,82 @@ Tilburg’s 105 ceT1 challenge-training scans and 32 private T2 validation scans
 
 **Read the table as reported experimental counts.** Do not assume that every available T1 volume entered the T1-only experiment.
 
-### 7.3 Numerical inconsistencies in Table 2
+### 7.3 Published counts versus released model metadata
 
-The asterisks above flag counts requiring reconciliation:
+Table 2 reports **248** training cases for all three combined models. However, the component sums and released model metadata differ:
 
-```text
-T1 components:     52 + 196 = 248
-T2 components:    291 + 196 = 487
-T1+T2 components:  48 + 196 = 244
-```
+| Input | Component sum from Table 2 | Combined count printed in Table 2 | Released `numTraining` |
+|---|---:|---:|---:|
+| T1 | `52 + 196 = 248` | 248 | **404** |
+| T2 | `291 + 196 = 487` | 248 | **487** |
+| T1 + T2 | `48 + 196 = 244` | 248 | **388** |
 
-Nevertheless, Table 2 prints **248** for all three combined models.
+The paper’s counts and the prepared model entries are different reporting levels. Preserve both rather than silently replacing the published values.
 
-This observation does not establish the correct combined T2 or T1+T2 count. The sums above are arithmetic comparisons, not replacements for verified training manifests. Preserve the published values and flag the discrepancy until model metadata, case lists, or author clarification resolves it.
+The T2 and T1+T2 combined counts printed in Table 2 remain discrepancies requiring clarification. The released metadata supplies the prepared-entry counts, but does not establish distinct patient or acquisition totals. [Kujawa et al., Table 2](https://www.frontiersin.org/journals/computational-neuroscience/articles/10.3389/fncom.2024.1365727/full#s2)
 
-Similarly, the table’s MC-RC T1 split totals **64 cases** (`52 + 12`), rather than the collection’s 124 ceT1 volumes. The model’s actual inclusion criteria and identifiers must be checked before claiming all 124 volumes were used.
+Similarly, the reported MC-RC T1 split totals **64 cases** (`52 + 12`), rather than the collection’s 124 ceT1 volumes. Exact inclusion criteria and case identifiers should be checked before claiming all 124 volumes entered that experiment.
 
-### 7.4 Why the released combined T1 model says `numTraining: 404`
+### 7.4 Released model metadata and inferred balancing
 
-The released model inspected in this project was:
+The following values were transcribed from project screenshots of the downloaded models’ `dataset.json` files:
 
-```text
-MC-RC+SC-GK-models/
-└── Dataset920_VSMCRCSCGKT1/
-    └── nnUNetTrainer__nnUNetPlans__3d_fullres/
-        └── dataset.json
-```
+| Model directory | Input channels | Observed `numTraining` |
+|---|---|---:|
+| `Dataset920_VSMCRCSCGKT1` | T1 | **404** |
+| `Dataset921_VSMCRCSCGKT2` | T2 | **487** |
+| `Dataset922_VSMCRCSCGKT1T2` | T1 and T2 | **388** |
 
-Its metadata contains:
+The files were inspected under `nnUNetTrainer__nnUNetPlans__3d_fullres/`.
 
-```json
-{
-  "description": "Combined dataset of VSMCRCT1 and VSSCGKT1 with cases repeated to balance the number of cases from each dataset",
-  "numTraining": 404
-}
-```
+**Model download:** [Kujawa’s official Zenodo release](https://zenodo.org/records/10363647).
 
-**This metadata explicitly establishes repetition. It does not establish 404 distinct MRI scans or patients.**
+All three descriptions mention combining MC-RC and SC-GK cases, with cases repeated for balancing. The paper also describes balanced sampling between cohorts. [Methods, §2.6.1](https://www.frontiersin.org/journals/computational-neuroscience/articles/10.3389/fncom.2024.1365727/full#s2)
 
-nnU-Net checks `numTraining` against the number of prepared dataset entries. That check does not deduplicate entries by their underlying patient or image content. [nnU-Net dataset verification code](https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunetv2/experiment_planning/verify_dataset_integrity.py)
+#### Reconstruction matching all three totals
 
-The paper describes balancing sampling between the two cohorts. [Methods, §2.6.1](https://www.frontiersin.org/journals/computational-neuroscience/articles/10.3389/fncom.2024.1365727/full#s2)
+| Input | MC-RC component | SC-GK component | Inferred MC-RC representations per original case | Reconstructed total |
+|---|---:|---:|---:|---:|
+| T1 | 52 | 196 | **4** | `52 × 4 + 196 = 404` |
+| T2 | 291 | 196 | **1** | `291 + 196 = 487` |
+| T1 + T2 | 48 | 196 | **4** | `48 × 4 + 196 = 388` |
 
-A reconstruction consistent with both the metadata and the T1 counts is:
+This supports the interpretation that:
 
-```text
-52 MC-RC cases represented four times: 52 × 4 = 208 entries
-196 SC-GK cases represented once:                196 entries
-──────────────────────────────────────────────────────────
-Prepared dataset total:                         404 entries
-```
+- **T1:** the smaller MC-RC subset was represented four times, producing 208 MC-RC entries alongside 196 SC-GK entries.
+- **T2:** the larger MC-RC subset was retained without expansion, producing 291 MC-RC entries alongside 196 SC-GK entries.
+- **T1+T2:** the smaller paired MC-RC subset was represented four times, producing 192 MC-RC entries alongside 196 SC-GK entries.
 
-This produces approximately balanced representation: 208 versus 196 entries.
+Four representations means the original plus three additional representations—not four extra copies.
 
-**Verification status:** this is an exact numerical explanation, but the fourfold repetition pattern has not been confirmed from individual case identifiers. The screenshot establishes repetition; a training-case list or `splits_final.json`, if supplied, would establish the allocation.
+The T1 and paired T1+T2 reconstructed datasets are nearly balanced between cohorts. The T2 reconstruction is not an exactly equal-size balance.
 
-Also, `numTraining` describes the prepared development dataset. It should not automatically be interpreted as the number of entries used to fit every individual cross-validation fold.
+#### Confirmed observations versus inferred implementation
 
-**Model download:** [Kujawa’s official Zenodo model release](https://zenodo.org/records/10363647).
+**Confirmed from the supplied screenshots:**
+
+- The prepared-entry totals are **404, 487, and 388**.
+- The descriptions explicitly mention repeated cases for balancing.
+
+**Inferred from the arithmetic:**
+
+- MC-RC was represented four times for T1 and T1+T2.
+- Neither cohort was expanded for T2.
+- SC-GK retained 196 entries in each combination.
+
+All three reconstructions match exactly, making this interpretation substantially stronger than an explanation based on the T1 total alone. Nevertheless, individual case identifiers have not been audited.
+
+The T2 description contains the same generic repetition wording. Its total matches the unrepeated component sum, so that wording alone should not be treated as proof that T2 cases were duplicated.
+
+A training manifest, `splits_final.json` if available, or author confirmation would establish exact membership, repetition multiplicity, and deduplication.
+
+#### What `numTraining` counts
+
+nnU-Net checks `numTraining` against the number of prepared dataset entries. It does not deduplicate them by patient or image content. [Dataset verification implementation](https://github.com/MIC-DKFZ/nnUNet/blob/master/nnunetv2/experiment_planning/verify_dataset_integrity.py)
+
+For the two-channel model, **one case entry contains both T1 and T2**. Therefore, 388 means 388 prepared paired cases—not 388 individual MRI volumes or 388 verified unique patients.
+
+The field also does not automatically give the number of entries used to fit each individual cross-validation fold.
 
 ### 7.5 How cross-collection overlap affects counting
 
@@ -339,20 +357,28 @@ These statements do not establish complete deduplication of the combined trainin
 
 Therefore:
 
-- Do not subtract 58 shared patients from a count of MRI volumes.
+- Do not subtract shared patients from a count of MRI volumes.
 - Do not assume all eight shared series are T1.
-- Do not call the summed training count “unique patients.”
-- Resolve source identifiers, shared series, and balancing copies separately.
+- Do not call summed training entries “unique patients.”
+- Resolve patient overlap, identical acquisitions, and balancing repetitions separately.
 
-### 7.6 Does 404 imply use of the private 137-patient London extension?
+### 7.6 Do these counts imply inclusion of the private London extension?
 
-**No such conclusion follows from this metadata.**
+**The metadata does not establish inclusion of the additional 137 private London patients.**
 
-Repeated entries already provide an exact arithmetic explanation for 404. Establishing inclusion of additional private patients would require case-level provenance or an explicit statement from the authors.
+The reported component counts reproduce all three released totals using the inferred balancing pattern:
 
-For reporting this model, use:
+```text
+T1:    52 × 4 + 196 = 404
+T2:   291     + 196 = 487
+T1+T2: 48 × 4 + 196 = 388
+```
 
-> The released combined T1 model declares 404 prepared training entries and explicitly documents repeated cases for cohort balancing. The paper reports 52 MC-RC and 196 SC-GK training cases for the T1 experiment. A fourfold representation of the MC-RC subset reproduces 404, but that allocation remains unverified from case identifiers. The metadata does not establish inclusion of the additional private London challenge cohort.
+Additional private cases are not needed to explain these totals. However, numerical consistency is not a case-level provenance audit and cannot establish the inclusion or exclusion of particular patients.
+
+For reporting these models:
+
+> The released combined models declare 404 T1, 487 T2, and 388 paired T1+T2 training entries. These totals are consistent with fourfold representation of the MC-RC T1 and T1+T2 subsets and an unrepeated T2 combination. Exact case membership, multiplicity, and deduplication remain unverified. The counts do not establish inclusion of the additional private London challenge cohort.
 
 ### 7.7 Implications for evaluation in this repository
 
