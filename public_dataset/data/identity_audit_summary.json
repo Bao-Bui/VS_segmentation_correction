@@ -1,0 +1,47 @@
+{
+  "review_date": "2026-10-16",
+  "identity_review_source": "repository_maintainer_visual_confirmation",
+  "official_tcia_duplicate_acquisitions": 8,
+  "official_t1_duplicates": 7,
+  "official_t2_duplicates": 1,
+  "additional_visually_confirmed_t1_duplicates": [
+    45,
+    60,
+    92,
+    112,
+    126,
+    178,
+    197
+  ],
+  "total_identified_t1_duplicates": 14,
+  "total_identified_t2_duplicates": 1,
+  "total_identified_duplicate_acquisitions": 15,
+  "shared_subjects": 58,
+  "shared_subjects_with_additional_acquisition": 57,
+  "shared_subject_without_additional_acquisition": "VS-SEG-126",
+  "ukm_t1_matches": 43,
+  "ukm_full_voxel_matches": 40,
+  "ukm_visual_defacing_matches": [
+    2,
+    6,
+    35
+  ],
+  "ukm_already_native_tcia_t1_labeled": 19,
+  "ukm_additional_t1_annotated_acquisitions": 24,
+  "mc_rc_ukm_t1_annotated_union": 88,
+  "mc_rc_ukm_t1_annotated_subjects": 67,
+  "london_tilburg_mc_rc_unique_t1_pre_eligibility_qc": 421,
+  "bilateral_cochlea_unique_acquisitions": 251,
+  "reported_expanded_t1_candidate_pool_pending_new_release_audits": 1525,
+  "output_rows": {
+    "mc_rc_l_sc_gk_subject_overlap.csv": 58,
+    "mc_rc_l_sc_gk_series_overlap.csv": 187,
+    "mc_rc_l_sc_gk_exact_duplicate_series.csv": 15,
+    "london_t1_crosswalk.csv": 242,
+    "tilburg_2022_2023_crosswalk.csv": 105,
+    "ukm2023_mc_rc_crosswalk.csv": 43,
+    "london_mc_rc_t1_duplicate_acquisitions.csv": 14,
+    "mc_rc_t1_metadata_recovered.csv": 124
+  },
+  "note": "Mask-grid validation and anatomical/eligibility QC are distinct from image-identity confirmation."
+}
