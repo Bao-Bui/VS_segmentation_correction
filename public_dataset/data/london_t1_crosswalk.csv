@@ -212,7 +212,7 @@ l_sc_gk_216,VS-SEG-216,vs_gk_216,crossmoda2021_ldn_51,crossmoda2023_ldn_1,identi
 l_sc_gk_217,VS-SEG-217,vs_gk_217,,,,,,,,false,,,,false,vs_gk_217/vs_gk_t1_refT1.nii.gz
 l_sc_gk_218,VS-SEG-218,vs_gk_218,crossmoda2021_ldn_45,,identical_canonical_voxels,,,,,false,,,,false,vs_gk_218/vs_gk_t1_refT1.nii.gz
 l_sc_gk_220,VS-SEG-220,vs_gk_220,,,,,,,,false,,,,false,vs_gk_220/vs_gk_t1_refT1.nii.gz
-l_sc_gk_221,VS-SEG-221,vs_gk_221,crossmoda2021_ldn_71,crossmoda2023_ldn_3,identical_canonical_voxels,,,,,false,,,,false,vs_gk_221/vs_gk_t1_refT1.nii.gz
+l_sc_gk_221,VS-SEG-221,vs_gk_221,crossmoda2021_ldn_71,crossmoda2023_ldn_3,identical_canonical_voxels,VS-SEG-221,1998-06-23,T1_9adbfde3a3ee,1.3.6.1.4.1.14519.5.2.1.307144511763788773661306264624297640568,true,visual_review_same_acquisition_different_slice_coverage,2026-10-20,crossmoda2023_ukm_27,true,vs_gk_221/vs_gk_t1_refT1.nii.gz
 l_sc_gk_222,VS-SEG-222,vs_gk_222,crossmoda2021_ldn_7,crossmoda2023_ldn_34,identical_canonical_voxels,,,,,false,,,,false,vs_gk_222/vs_gk_t1_refT1.nii.gz
 l_sc_gk_223,VS-SEG-223,vs_gk_223,,,,,,,,false,,,,false,vs_gk_223/vs_gk_t1_refT1.nii.gz
 l_sc_gk_224,VS-SEG-224,vs_gk_224,,,,,,,,false,,,,false,vs_gk_224/vs_gk_t1_refT1.nii.gz

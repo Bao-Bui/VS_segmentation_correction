@@ -1,6 +1,6 @@
 # Public Vestibular Schwannoma MRI Datasets and crossMoDA
 
-**Last checked: October 16, 2026**
+**Last updated: October 20, 2026**
 
 A reference to the clinical cohorts, public scans and annotations, crossMoDA releases, and Kujawa's model-development cohorts. Section 2 contains the detailed cohort descriptions. Counts describe release availability, not a completed visual review of every scan or mask.
 
@@ -116,6 +116,23 @@ The bilateral challenge annotations and the clinical TCIA cochlea contours are d
 
 The 2023 London source subset contains 79 T1 scans after edition-specific exclusions; it is not a new independent London cohort. [Challenge split table](https://arxiv.org/html/2506.12006v4#S2.T1)
 
+#### Surgical-status metadata and remaining QC
+
+The original London paper reports **49 post-surgical subjects among 242**. Mehta et al. evaluated 241 T1 scans after excluding vs_gk_131 for absence of VS, reporting **193 preoperative and 48 postoperative scans**, including **22 with fat packing and 26 without**. The repository maintainer also found no visible VS in vs_gk_131. Its postoperative status remains unverified: removing a postoperative subject would explain the 49-versus-48 difference, but that explanation is not established. [Original London paper](https://doi.org/10.1038/s41597-021-01064-w), [Mehta et al. and supplement](https://doi.org/10.3174/ajnr.A9112)
+
+A partial subject-level tally is publicly available in crossMoDA 2022's official infos_source_training.csv. Joining its London source identifiers to the image-identity crosswalk gives:
+
+| London TCIA subjects | Count | What the public metadata establishes |
+|---|---:|---|
+| Explicit postoperative marker in the 2022 source metadata | 28 | Reported postoperative status |
+| Numeric Koos entry without an explicit postoperative marker | 77 | No explicit postoperative flag; **not confirmation of preoperative status** |
+| Outside that 105-scan source subset | 137 | Surgical status not supplied by this source metadata |
+| **Total** | **242** | **No verified complete subject-level surgical-status tally** |
+
+The [242-row surgical-status inventory](data/london_surgical_status.csv) preserves this provenance and provides separate fields for manual surgical-status and fat-packing QC. The public source metadata does not identify fat packing; that classification remains unverified for all 242 subjects in this inventory. Absence of a fat graft, absence of a cochlea annotation, or a numeric Koos score is not sufficient to label a scan preoperative. [Official 2022 source metadata](https://zenodo.org/records/6504722/files/infos_source_training.csv?download=1)
+
+Challenge inclusion is also an unreliable surgical-status surrogate. Three explicitly postoperative 2022 source cases remain in the 2023 source set (TCIA **007, 080, and 246**), while TCIA **228**, which has a numeric Koos 4 entry, is absent. The inventory therefore records the source metadata separately from edition membership and later image-based QC.
+
 #### Why 242 and 379 both appear
 
 | London group | Acquisition period reported by the challenge paper | Designated challenge role |
@@ -199,9 +216,9 @@ Availability counts are the October 2026 inventory of the downloaded release, no
 
 #### Shared subjects and true series overlap with London
 
-**58 subjects occur in both MC-RC and L-SC-GK. The official TCIA mapping lists eight duplicated acquisitions: seven T1 and one T2. This repository's image audit and subsequent visual review identify seven additional T1 duplicates, bringing the identified overlap to 15 acquisitions: 14 T1 and one T2.**
+**58 subjects occur in both MC-RC and L-SC-GK. The official TCIA mapping lists eight duplicated acquisitions: seven T1 and one T2. This repository's completed image review identifies ten additional duplicates, bringing the confirmed overlap to 18 acquisitions: 15 T1 and three T2.** The official mapping remains unchanged; the additional relationships below are repository-derived findings.
 
-The seven additional T1 subjects are **VS-SEG-045, 060, 092, 112, 126, 178, and 197**. All 27 sampled central patches match for each pair, and visual review confirms that differing defacing explains the remaining image differences. These are repository-derived findings, not additions already present in TCIA's official table. Different exports and defacing can change Series Instance UIDs, headers, and facial pixels without creating a new acquisition. [Official TCIA mapping and documentation](https://wiki.cancerimagingarchive.net/pages/viewpage.action?pageId=157287455), [confirmed acquisition table and evidence](data/mc_rc_l_sc_gk_exact_duplicate_series.csv)
+The initial image audit established seven additional T1 duplicates for **VS-SEG-045, 060, 092, 112, 126, 178, and 197**. All 27 sampled central patches match for each pair, and visual review confirms that differing defacing explains the remaining image differences. The subsequent review of all **172 remaining scans** confirmed **three further duplicates**: **VS-SEG-094 T2, VS-SEG-172 T2, and VS-SEG-221 T1**. The other **169 scans** were reviewed as different acquisitions. For subject 221, the duplicated exports have different numbers of axial slices despite matching anatomy; acquisition identity does not mean identical coverage or interchangeable image grids. [Official TCIA mapping and documentation](https://wiki.cancerimagingarchive.net/pages/viewpage.action?pageId=157287455), [confirmed acquisition table and evidence](data/mc_rc_l_sc_gk_exact_duplicate_series.csv), [completed 172-scan review](data/mc_rc_l_sc_gk_duplication_qc.csv)
 
 Within the MC-RC scans belonging to the 58 shared subjects:
 
@@ -209,20 +226,23 @@ Within the MC-RC scans belonging to the 58 shared subjects:
 |---|---:|---:|---:|
 | All scans from shared subjects | 62 | 125 | 187 |
 | Duplicates in the official TCIA table | 7 | 1 | 8 |
-| Additional duplicates confirmed by image review | 7 | 0 | 7 |
-| **All identified duplicate acquisitions** | **14** | **1** | **15** |
-| Scans not identified as duplicates in this audit | 48 | 124 | 172 |
-| TCIA native-grid VS masks among those 172 scans | 26 | 77 | 103 |
+| Additional duplicates confirmed by image review | 8 | 2 | 10 |
+| **All confirmed duplicate acquisitions** | **15** | **3** | **18** |
+| Reviewed as different acquisitions from the London reference | 47 | 122 | 169 |
+| TCIA native-grid VS masks among those 169 scans | 25 | 76 | 101 |
+
+The **169 remaining scans represent 147 examinations**. The review was a comparison with the corresponding London reference scans; it does not establish that every scan in MC-RC, every other release, or every longitudinal examination has been compared against every other scan.
 
 **57 of the 58 shared subjects contribute at least one additional MC-RC acquisition. VS-SEG-126 is the exception: its only MC-RC scan is its confirmed duplicated T1 acquisition.** Shared subject identity otherwise does not imply that all visits are duplicated.
 
-For the **64 native-labeled TCIA T1 scans**, 40 belong to shared London subjects: 14 duplicated acquisitions and 26 other scans. The other 24 scans belong to MC-RC-only subject identifiers. Additional crossMoDA T1 annotations are counted separately below.
+For the **64 native-labeled TCIA T1 scans**, 40 belong to shared London subjects: 15 duplicated acquisitions and 25 other scans. The other 24 scans belong to MC-RC-only subject identifiers. Additional crossMoDA T1 annotations are counted separately below.
 
 | Shared subject | Released MC-RC study date | Duplicated modality | Evidence |
 |---|---|---|---|
 | VS-SEG-045 | 1995-05-02 | T1 | Image matching and visual review |
 | VS-SEG-060 | 1995-12-25 | T1 | Image matching and visual review |
 | VS-SEG-092 | 1996-02-28 | T1 | Image matching and visual review |
+| VS-SEG-094 | 1996-08-12 | T2 | Completed manual duplication QC |
 | VS-SEG-095 | 1996-11-16 | T1 | Official TCIA mapping |
 | VS-SEG-111 | 1997-03-23 | T1 | Official TCIA mapping |
 | VS-SEG-112 | 1997-02-28 | T1 | Image matching and visual review |
@@ -231,21 +251,26 @@ For the **64 native-labeled TCIA T1 scans**, 40 belong to shared London subjects
 | VS-SEG-133 | 1997-04-24 | T2 | Official TCIA mapping |
 | VS-SEG-135 | 1997-02-23 | T1 | Official TCIA mapping |
 | VS-SEG-154 | 1997-10-10 | T1 | Official TCIA mapping |
+| VS-SEG-172 | 1998-06-08 | T2 | Completed manual duplication QC |
 | VS-SEG-178 | 1998-04-03 | T1 | Image matching and visual review |
 | VS-SEG-188 | 1997-11-19 | T1 | Official TCIA mapping |
 | VS-SEG-197 | 1998-01-22 | T1 | Image matching and visual review |
 | VS-SEG-199 | 1998-02-02 | T1 | Official TCIA mapping |
+| VS-SEG-221 | 1998-06-23 | T1 | Completed manual QC; different axial-slice coverage |
 
-The T2 duplication for subject 133 does not make that subject's London T1 a duplicated T1 acquisition. T2 has not undergone the comprehensive image-identity audit performed for the selected T1 scans; the table records identified overlap rather than proving every remaining T2 acquisition unique.
+The T2 duplications for subjects **094, 133, and 172** do not make their London T1 scans duplicated T1 acquisitions. MC-RC supplies no native T2 mask for the duplicated subject 094 scan; native T2 masks are available for the duplicated subject 133 and 172 scans.
 
 Supporting tables:
 
 - [58 shared subjects](data/mc_rc_l_sc_gk_subject_overlap.csv).
 - [187 series from shared subjects](data/mc_rc_l_sc_gk_series_overlap.csv).
-- [15 confirmed duplicate acquisitions](data/mc_rc_l_sc_gk_exact_duplicate_series.csv); the historical filename uses "exact" for acquisition identity, not identical voxel arrays.
-- [14 duplicated T1 acquisitions with image-matching evidence](data/london_mc_rc_t1_duplicate_acquisitions.csv).
+- [18 confirmed duplicate acquisitions](data/mc_rc_l_sc_gk_exact_duplicate_series.csv); the historical filename uses "exact" for acquisition identity, not identical voxel arrays.
+- [15 duplicated T1 acquisitions with identity evidence](data/london_mc_rc_t1_duplicate_acquisitions.csv).
+- [All 172 completed duplication-QC decisions](data/mc_rc_l_sc_gk_duplication_qc.csv).
 
-Released study dates can be deidentified. Seven newly established relationships do not yet have the London Series Instance UID recorded; their TCIA subject and image path remain explicit, and missing UIDs are left blank.
+Released study dates can be deidentified. Ten repository-established relationships do not yet have the London Series Instance UID recorded; their TCIA subject and image path remain explicit, and missing UIDs are left blank.
+
+Maintainer review often found the MC-RC mask larger and better delineated at the tumor boundary than the corresponding London mask. This supports a **provisional preference for the MC-RC annotation after image-overlay review**, not automatic selection of the larger mask. Preserve both source annotations until that review is complete. Compare physical mask size in **mm³**, rather than raw foreground-voxel counts, when image grids differ. Confirm coverage and image-mask geometry before transferring a mask between exports, especially for the subject 221 pair.
 
 #### The related UKM crossMoDA 2023 annotation release
 
@@ -265,7 +290,7 @@ Among the 43 UKM acquisitions:
 - **24** gain a publicly available T1 reference annotation through crossMoDA. All 24 are paired examinations whose TCIA mask was on T2.
 - The combined MC-RC/UKM public annotated T1 pool therefore contains **64 + 43 - 19 = 88 acquisitions from 67 subjects**.
 
-Those 88 acquisitions comprise **48 scans from 34 London-shared subjects** and **40 scans from 33 MC-RC-only subjects**. Four UKM images also duplicate London reference acquisitions: **UKM 10 to TCIA 178, 21 to 126, 24 to 095, and 32 to 154**.
+Those 88 acquisitions comprise **48 scans from 34 London-shared subjects** and **40 scans from 33 MC-RC-only subjects**. Five UKM images also duplicate London reference acquisitions: **UKM 10 to TCIA 178, 21 to 126, 24 to 095, 27 to 221, and 32 to 154**. The newly confirmed subject 221 relationship also links UKM 27 to **crossmoda2021_ldn_71** in the 2022 package and **crossmoda2023_ldn_3**.
 
 For UKM 6 and 35, the same-study T2 scans have public masks that passed the final image-mask validation. Their classification as T1-only inside the without_masks group described modalities within that mask-availability group; it did not mean that no paired T2 scan existed elsewhere.
 
@@ -313,22 +338,23 @@ Catalog aliases, conversions, and repackagings of existing London/crossMoDA data
 | London TCIA | 242 tumor/target contour sets | 146 subjects with cochlea-named contours | Clinical release; VS eligibility pending QC; cochlea generally unilateral |
 | London crossMoDA 2021/2022 source | 105 | 105 bilateral | All 105 mapped to the London TCIA cohort |
 | Tilburg crossMoDA 2022/2023 source | 105 | 105 bilateral | All 105 matched across editions; count once |
-| MC-RC TCIA, native T1 grid | 64 | 0 in this product | Contains 14 duplicated London T1 acquisitions |
+| MC-RC TCIA, native T1 grid | 64 | 0 in this product | Contains 15 duplicated London T1 acquisitions |
 | UKM crossMoDA 2023 source | 43 | 43 bilateral | 19 already have TCIA T1 masks; 24 add T1 annotations |
-| **MC-RC/UKM union** | **88** | **43 bilateral** | **64 + 43 - 19 acquisitions; includes 14 London duplicates** |
+| **MC-RC/UKM union** | **88** | **43 bilateral** | **64 + 43 - 19 acquisitions; includes 15 London duplicates** |
 | MC-RC2 | 534 | No release described | Separate collection; local completeness and mask QC pending |
 | UCSD-VS-Longitudinal | 570 reference examinations | No release described | Reference-scan and file counts not locally audited |
 
-For the audited London, Tilburg, and original MC-RC/UKM families, acquisition matching yields **242 + 105 + 88 - 14 = 421 distinct T1 acquisitions with public VS/target annotations before case-level eligibility and segmentation QC**. This is an acquisition count, not a subject count. Alternate annotation products on one acquisition are counted once.
+For the audited London, Tilburg, and original MC-RC/UKM families, acquisition matching yields **242 + 105 + 88 - 15 = 420 distinct T1 acquisitions with public VS/target annotations before case-level eligibility and segmentation QC**. This is an acquisition count, not a subject count. Alternate annotation products on one acquisition are counted once.
 
-Adding the reported MC-RC2 and UCSD reference counts would give **421 + 534 + 570 = 1,525 candidate T1 reference acquisitions**, conditional on their reported cohort independence and pending local completeness, identity, reference-image, and eligibility checks. This is not a final QC-approved dataset size.
+Adding the reported MC-RC2 and UCSD reference counts would give **420 + 534 + 570 = 1,524 candidate T1 reference acquisitions**, conditional on their reported cohort independence and pending local completeness, identity, reference-image, and eligibility checks. This is not a final QC-approved dataset size.
 
-For bilateral cochlea, the London, Tilburg, and UKM releases provide **105 + 105 + 43 = 253 annotation records representing 251 distinct acquisitions**. Two acquisitions occur in both London and UKM:
+For bilateral cochlea, the London, Tilburg, and UKM releases provide **105 + 105 + 43 = 253 annotation records representing 250 distinct acquisitions**. Three acquisitions occur in both London and UKM:
 
 | London TCIA subject | London source ID retained in the 2022 package | UKM 2023 source ID |
 |---|---|---|
 | VS-SEG-126 | crossmoda2021_ldn_92 | crossmoda2023_ukm_21 |
 | VS-SEG-095 | crossmoda2021_ldn_64 | crossmoda2023_ukm_24 |
+| VS-SEG-221 | crossmoda2021_ldn_71 | crossmoda2023_ukm_27 |
 
 These image aliases do not establish identical cochlea or VS delineations. Original unilateral TCIA cochlea contours do not provide equivalent bilateral coverage.
 
@@ -398,7 +424,7 @@ Verify the license attached to the downloaded package. In particular, do not rep
 | crossmoda2022_etz_0 through _104 | Tilburg 2022 source identifiers; numbering starts at zero |
 | crossmoda2023_ldn_*, _etz_*, _ukm_* | Edition-specific 2023 identifiers |
 
-This repository provides derived image-identity crosswalks: **105 London 2022 source scans and 79 London 2023 source scans to TCIA; all 105 Tilburg source scans across 2022/2023; and all 43 UKM source scans to MC-RC**. Automated matching used complete scaled canonical voxel arrays without resampling; visual review resolved defacing variants. Numeric similarity, adding one, or padding identifiers does not establish identity. The 2022 source CSV supplies challenge metadata rather than TCIA Series Instance UIDs. See the [crosswalk definitions and evidence](data/README.md). [2022 source metadata](https://zenodo.org/records/6504722/files/infos_source_training.csv?download=1)
+This repository provides derived image-identity crosswalks: **105 London 2022 source scans and 79 London 2023 source scans to TCIA; all 105 Tilburg source scans across 2022/2023; and all 43 UKM source scans to MC-RC**. Automated matching used complete scaled canonical voxel arrays without resampling; visual review resolved defacing variants and the subject 221 export with differing slice coverage. Numeric similarity, adding one, or padding identifiers does not establish identity. The 2022 source CSV supplies challenge metadata rather than TCIA Series Instance UIDs. See the [crosswalk definitions and evidence](data/README.md). [2022 source metadata](https://zenodo.org/records/6504722/files/infos_source_training.csv?download=1)
 
 ### 6.2 Recommended canonical names
 
@@ -467,7 +493,7 @@ The external tests used Tilburg's 105 source T1 scans and 32 T2 validation scans
 
 Kujawa was among the challenge organizers, whose documented access arrangement allowed access to private tests when needed. This does not establish which private files were used in this particular study. [Official 2022 release](https://zenodo.org/records/6504722)
 
-The paper describes assigning shared-series subjects to development partitions to avoid cross-collection train/test leakage. The current audit identifies seven T1 duplicates beyond TCIA's published mapping. The released numTraining totals alone do not establish where those acquisitions fell in the authors' splits or whether every duplicated combined-model entry was removed. The observed shared scans and distinct follow-up acquisitions are documented in section 2.3.
+The paper describes assigning shared-series subjects to development partitions to avoid cross-collection train/test leakage. The completed audit identifies eight T1 and two T2 duplicates beyond TCIA's published mapping. The released numTraining totals alone do not establish where those acquisitions fell in the authors' splits or whether every duplicated combined-model entry was removed. The observed shared scans and distinct follow-up acquisitions are documented in section 2.3.
 
 ## 8. Sources
 

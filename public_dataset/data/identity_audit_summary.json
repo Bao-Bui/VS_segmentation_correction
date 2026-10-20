@@ -1,5 +1,5 @@
 {
-  "review_date": "2026-10-16",
+  "review_date": "2026-10-20",
   "identity_review_source": "repository_maintainer_visual_confirmation",
   "official_tcia_duplicate_acquisitions": 8,
   "official_t1_duplicates": 7,
@@ -11,11 +11,12 @@
     112,
     126,
     178,
-    197
+    197,
+    221
   ],
-  "total_identified_t1_duplicates": 14,
-  "total_identified_t2_duplicates": 1,
-  "total_identified_duplicate_acquisitions": 15,
+  "total_identified_t1_duplicates": 15,
+  "total_identified_t2_duplicates": 3,
+  "total_identified_duplicate_acquisitions": 18,
   "shared_subjects": 58,
   "shared_subjects_with_additional_acquisition": 57,
   "shared_subject_without_additional_acquisition": "VS-SEG-126",
@@ -30,18 +31,73 @@
   "ukm_additional_t1_annotated_acquisitions": 24,
   "mc_rc_ukm_t1_annotated_union": 88,
   "mc_rc_ukm_t1_annotated_subjects": 67,
-  "london_tilburg_mc_rc_unique_t1_pre_eligibility_qc": 421,
-  "bilateral_cochlea_unique_acquisitions": 251,
-  "reported_expanded_t1_candidate_pool_pending_new_release_audits": 1525,
+  "london_tilburg_mc_rc_unique_t1_pre_eligibility_qc": 420,
+  "bilateral_cochlea_unique_acquisitions": 250,
+  "reported_expanded_t1_candidate_pool_pending_new_release_audits": 1524,
   "output_rows": {
     "mc_rc_l_sc_gk_subject_overlap.csv": 58,
     "mc_rc_l_sc_gk_series_overlap.csv": 187,
-    "mc_rc_l_sc_gk_exact_duplicate_series.csv": 15,
+    "mc_rc_l_sc_gk_exact_duplicate_series.csv": 18,
     "london_t1_crosswalk.csv": 242,
     "tilburg_2022_2023_crosswalk.csv": 105,
     "ukm2023_mc_rc_crosswalk.csv": 43,
-    "london_mc_rc_t1_duplicate_acquisitions.csv": 14,
-    "mc_rc_t1_metadata_recovered.csv": 124
+    "london_mc_rc_t1_duplicate_acquisitions.csv": 15,
+    "mc_rc_t1_metadata_recovered.csv": 124,
+    "mc_rc_l_sc_gk_duplication_qc.csv": 172,
+    "london_surgical_status.csv": 242
   },
-  "note": "Mask-grid validation and anatomical/eligibility QC are distinct from image-identity confirmation."
+  "note": "Mask-grid validation and anatomical/eligibility QC are distinct from image-identity confirmation.",
+  "additional_visually_confirmed_t2_duplicates": [
+    94,
+    172
+  ],
+  "shared_subject_remaining_scans": {
+    "total": 169,
+    "T1": 47,
+    "T2": 122,
+    "native_masks_total": 101,
+    "native_T1_masks": 25,
+    "native_T2_masks": 76
+  },
+  "completed_duplication_qc": {
+    "date": "2026-10-20",
+    "reviewed_scans": 172,
+    "same_acquisition": 3,
+    "different_acquisition": 169,
+    "scope": "Remaining MC-RC scans from the 58 subjects shared with London; visual review by repository maintainer.",
+    "source_file": "mc_rc_l_sc_gk_duplication_qc.csv",
+    "source_sha256": "349e20da004101199ecebf5d7bce81519afb088daeb9613c3ce51b13b0876f92"
+  },
+  "new_t1_duplicate_slice_coverage_note": {
+    "subject_id": "VS-SEG-221",
+    "qc_id": "MCQC168",
+    "note": "just different number of axial slices, but anatomy matches"
+  },
+  "ukm_london_same_acquisitions": 5,
+  "bilateral_cochlea_annotation_records": 253,
+  "bilateral_cochlea_repeated_acquisitions": 3,
+  "london_surgical_status": {
+    "rows": 242,
+    "reported_postoperative_in_2022_source_metadata": 28,
+    "numeric_koos_not_confirmed_preoperative": 77,
+    "outside_2022_source_subset": 137,
+    "fat_graft_status_qc": "not_performed",
+    "source_url": "https://zenodo.org/records/6504722/files/infos_source_training.csv?download=1",
+    "source_sha256": "694405a6ffbc1f0cfd82c49d74a4d5ddc9c5c4c44280eab77cc0ddef230c8ee4",
+    "postoperative_flag_retained_in_2023": [
+      "VS-SEG-007",
+      "VS-SEG-080",
+      "VS-SEG-246"
+    ],
+    "numeric_koos_absent_in_2023": [
+      "VS-SEG-228"
+    ],
+    "VS-SEG-131": "No visible VS confirmed by maintainer; surgical status not inferred."
+  },
+  "mask_selection_policy": {
+    "status": "provisional_future_curation_preference",
+    "observation": "Maintainer often found the MC-RC mask larger and its boundary delineation better than the London annotation of the same acquisition.",
+    "selection": "Prefer the larger mask when anatomical review supports its boundary quality and intended whole-VS definition. Compare physical volume, preserve both annotations and provenance, and validate geometry before transfer.",
+    "masks_changed_in_this_update": false
+  }
 }
