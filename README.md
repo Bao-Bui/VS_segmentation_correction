@@ -183,12 +183,6 @@ It does not deoblique them. Its CSV now records `measurement_plane_basis` and
 `max_obliquity_degrees`, and reports residual obliquity when applicable. Existing
 volume and chord measurements retain their acquisition-plane definitions.
 
-Orientation regression tests use synthetic masks and temporary files:
-
-```bash
-python -B -m unittest discover -s tests -v
-```
-
 
 Examples of false positive and correction:
 
