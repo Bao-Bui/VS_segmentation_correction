@@ -132,7 +132,7 @@ RESULTS_FOLDER/nnUNet/
 
 ### 5. Run the following inference prompt in the terminal
 ```
-nnUNet_predict -i nnUNet1_raw_data_base/nnUNet_raw_data/Task600_Brainstem/imagesTs -o path_to_brainstem_output_folder -tr nnUNetTrainerV2 -m 3d_fullres -p nnUNetPlansv2.1_24GB -t Task600_Brainstem
+nnUNet_predict -i nnUNet1_raw_data_base/nnUNet_raw_data/Task600_Brainstem/imagesTs -o path_to_brainstem_output_folder -tr nnUNetTrainerV2 -m 3d_fullres -p nnUNetPlansv2.1_24GB -t Task600_Brainstem -f 0 1 2 3 4
 ```
 Assuming the input folder looks like the example above, you'll find the automated segmentation brainstem masks in the brainstem_output_folder in the following format if inference was run successfully:
 ```
