@@ -161,6 +161,8 @@ non-overlap reference likewise uses anatomical superior medulla and inferior
 pons endpoints. Shared-slice medians and integer midpoint conversion remain.
 An oblique acquired slice remains oblique and is not a true anatomical axial
 plane. The reference slice is the slice containing the anatomical endpoint.
+The shared `anatomical_z_extreme` helper returns both the endpoint world-Z
+coordinate and its acquired slice index in one search.
 
 Among crossing components, centroid proximity to the image-center world-X
 reference determines selection. When none crosses, the standard fallback

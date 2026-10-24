@@ -53,6 +53,7 @@ import argparse
 import concurrent.futures as cf
 import shutil
 from pathlib import Path
+from typing import Optional
 
 import nibabel as nib
 import numpy as np
@@ -112,17 +113,19 @@ def canonical_working_view(data: np.ndarray, affine: np.ndarray):
     return working, working_affine, inverse
 
 
-def anatomical_extreme_slice(bs: np.ndarray, affine: np.ndarray,
-                             label_id: int, mode: str) -> int:
-    """Acquired axis-2 slice containing a label's anatomical Z extremum.
+def anatomical_z_extreme(bs: np.ndarray, affine: np.ndarray,
+                         labels, mode: str) -> Optional[tuple[float, int]]:
+    """Return (world Z, acquired slice index) for an anatomical extremum.
 
-    Inputs use the common RAS working view. For oblique data, the voxel with
-    maximum world Z can occur before the maximum occupied slice index.
-    Extrema refer to voxel centers, consistently with world_z_extreme().
+    Inputs use the common RAS working view. Extrema refer to voxel centers.
+    Lower world Z is inferior and higher world Z is superior. The slice index
+    is axis 2 of the voxel attaining the extremum, not necessarily the maximum
+    occupied slice index in an oblique image. Ties use the first voxel in array
+    order. Return None when none of the requested labels is present.
     """
-    voxels = np.argwhere(bs == label_id)
+    voxels = np.argwhere(np.isin(bs, labels))
     if voxels.size == 0:
-        raise RuntimeError(f"No brainstem voxels for label {label_id}")
+        return None
     world_z = nib.affines.apply_affine(affine, voxels)[:, 2]
     if mode == "superior":
         index = np.argmax(world_z)
@@ -130,7 +133,7 @@ def anatomical_extreme_slice(bs: np.ndarray, affine: np.ndarray,
         index = np.argmin(world_z)
     else:
         raise ValueError("mode must be 'inferior' or 'superior'")
-    return int(voxels[index, 2])
+    return float(world_z[index]), int(voxels[index, 2])
 
 
 def z_medulla_max(bs: np.ndarray, affine: np.ndarray) -> int:
@@ -139,10 +142,14 @@ def z_medulla_max(bs: np.ndarray, affine: np.ndarray) -> int:
     The legacy function name is retained, but maximum ARRAY index is no longer
     assumed to mean superior. Call on the common RAS working view.
     """
-    return anatomical_extreme_slice(bs, affine, label_id=3, mode="superior")
+    extreme = anatomical_z_extreme(bs, affine, labels=(3,), mode="superior")
+    if extreme is None:
+        raise RuntimeError("No brainstem voxels for label 3")
+    return extreme[1]
 
 
-def z_medulla_pons_overlap(bs: np.ndarray, affine: np.ndarray) -> int:
+def z_medulla_pons_overlap(bs: np.ndarray, affine: np.ndarray,
+                           medulla_superior_slice: Optional[int] = None) -> int:
     """Junction reference in the common RAS acquired-slice coordinates.
 
     Preserve the integer median of shared acquired slices. Without overlap,
@@ -158,32 +165,10 @@ def z_medulla_pons_overlap(bs: np.ndarray, affine: np.ndarray) -> int:
     overlap = np.intersect1d(z_med, z_pon)
     if overlap.size:
         return int(np.median(overlap))
-    medulla_superior = z_medulla_max(bs, affine)
-    pons_inferior = anatomical_extreme_slice(bs, affine, 2, "inferior")
-    return int(0.5 * (medulla_superior + pons_inferior))
-
-
-def world_z_extreme(bs: np.ndarray, affine: np.ndarray,
-                    labels, mode: str):
-    """
-    Return the most inferior/superior world-Z coordinate for selected labels.
-
-    NIfTI world coordinates are RAS-like: lower world Z is inferior and higher
-    world Z is superior. Using the affine avoids assuming voxel-axis direction.
-    """
-    mask = np.isin(bs, labels)
-    voxels = np.argwhere(mask)
-    if voxels.size == 0:
-        return None
-
-    world = nib.affines.apply_affine(affine, voxels)
-    z_world = world[:, 2]
-
-    if mode == "inferior":
-        return float(z_world.min())
-    if mode == "superior":
-        return float(z_world.max())
-    raise ValueError("mode must be 'inferior' or 'superior'")
+    if medulla_superior_slice is None:
+        medulla_superior_slice = z_medulla_max(bs, affine)
+    _, pons_inferior = anatomical_z_extreme(bs, affine, (2,), "inferior")
+    return int(0.5 * (medulla_superior_slice + pons_inferior))
 
 
 def incomplete_brainstem_reference(bs: np.ndarray,
@@ -213,21 +198,21 @@ def incomplete_brainstem_reference(bs: np.ndarray,
     # No medulla: pons takes priority over midbrain. This includes pons-only
     # and midbrain+pons masks.
     if has_pons and (not has_medulla):
-        target_z = world_z_extreme(bs, affine, labels=(2,), mode="inferior")
+        target_z, _ = anatomical_z_extreme(bs, affine, labels=(2,), mode="inferior")
         return target_z, "inferior boundary of pons"
 
     # No pons or medulla: fall back to the inferior boundary of midbrain.
     if has_midbrain and (not has_pons) and (not has_medulla):
-        target_z = world_z_extreme(bs, affine, labels=(1,), mode="inferior")
+        target_z, _ = anatomical_z_extreme(bs, affine, labels=(1,), mode="inferior")
         return target_z, "inferior boundary of midbrain"
 
     # Pons missing, but both midbrain and medulla survived. Estimate the
     # missing pons level from the midpoint of the two adjacent boundaries.
     if has_midbrain and has_medulla and (not has_pons):
-        midbrain_inf = world_z_extreme(
+        midbrain_inf, _ = anatomical_z_extreme(
             bs, affine, labels=(1,), mode="inferior"
         )
-        medulla_sup = world_z_extreme(
+        medulla_sup, _ = anatomical_z_extreme(
             bs, affine, labels=(3,), mode="superior"
         )
         target_z = 0.5 * (midbrain_inf + medulla_sup)
@@ -238,7 +223,7 @@ def incomplete_brainstem_reference(bs: np.ndarray,
 
     # Medulla-only fallback.
     if has_medulla and (not has_midbrain) and (not has_pons):
-        target_z = world_z_extreme(bs, affine, labels=(3,), mode="superior")
+        target_z, _ = anatomical_z_extreme(bs, affine, labels=(3,), mode="superior")
         return target_z, "superior boundary of medulla"
 
     return None, "no usable brainstem labels"
@@ -425,10 +410,11 @@ def process_case(tumor_path: Path, brain_path: Path, out_path: Path):
 
         if has_pons and has_medulla:
             # Complete enough for the original correction pathway.
-            medulla_z = z_medulla_max(brainstem, brainstem_affine)
-            pontomedullary_z = z_medulla_pons_overlap(brainstem, brainstem_affine)
-            medulla_z_world = world_z_extreme(
+            medulla_z_world, medulla_z = anatomical_z_extreme(
                 brainstem, brainstem_affine, labels=(3,), mode="superior"
+            )
+            pontomedullary_z = z_medulla_pons_overlap(
+                brainstem, brainstem_affine, medulla_superior_slice=medulla_z
             )
             
             keep = choose_component_complete(
