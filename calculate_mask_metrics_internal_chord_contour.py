@@ -5,7 +5,12 @@ for all NIfTI masks in a folder.
 
 Definition
 ----------
-For each axial, sagittal, and coronal 2D slice:
+The loader losslessly reorders and flips the mask toward RAS. It does not
+resample oblique acquisitions. Axial, sagittal, and coronal below name the
+corresponding reoriented acquisition planes, not newly reconstructed anatomical
+planes. Output includes the maximum residual obliquity to make this explicit.
+
+For each reoriented axial, sagittal, and coronal 2D slice:
 
 1. Convert the binary mask to its exact pixel-edge polygon.
 2. Use OUTER contour vertices as candidate endpoints.
@@ -274,6 +279,7 @@ def calculate_metrics(mask: np.ndarray, affine: np.ndarray):
 
     volume_mm3 = foreground_voxels * voxel_volume_mm3
     volume_cm3 = volume_mm3 / 1000.0
+    max_obliquity_deg = float(np.degrees(nib.affines.obliquity(affine)).max())
 
     if foreground_voxels == 0:
         axial_mm = sagittal_mm = coronal_mm = 0.0
@@ -308,6 +314,8 @@ def calculate_metrics(mask: np.ndarray, affine: np.ndarray):
         "max_coronal_diameter_cm": coronal_cm,
         "max_diameter_cm": maximum_cm,
         "max_diameter_plane": ";".join(max_planes),
+        "measurement_plane_basis": "RAS-reoriented acquisition planes",
+        "max_obliquity_degrees": max_obliquity_deg,
     }
 
 
@@ -351,6 +359,8 @@ def main():
         "max_coronal_diameter_cm",
         "max_diameter_cm",
         "max_diameter_plane",
+        "measurement_plane_basis",
+        "max_obliquity_degrees",
     ]
 
     rows = []
@@ -380,9 +390,18 @@ def main():
                     round(metrics["max_diameter_cm"], 4),
                 "max_diameter_plane":
                     metrics["max_diameter_plane"],
+                "measurement_plane_basis": metrics["measurement_plane_basis"],
+                "max_obliquity_degrees": round(metrics["max_obliquity_degrees"], 6),
             }
 
             rows.append(row)
+            if metrics["max_obliquity_degrees"] > 1e-3:
+                print(
+                    f"NOTE: {path.name} has residual obliquity "
+                    f"{metrics['max_obliquity_degrees']:.3f} degrees. "
+                    "Diameters use reoriented acquisition planes, not "
+                    "resampled anatomical planes."
+                )
 
             print(
                 f"[{i}/{len(files)}] {path.name}: "

@@ -146,6 +146,50 @@ Assuming the input folder looks like the example above, you'll find the automate
 ## Step 3: False Positive Correction
 For usage: python vs_false_positive_correction.py -h
 
+### NIfTI orientation and anatomical references
+
+The correction script now uses a losslessly reoriented RAS working view of each
+compatible tumor/brainstem pair. Only axis permutations and flips are applied.
+No interpolation, resampling, or registration is performed, and the corrected
+mask is restored to the original tumor image's array order, affine, and header.
+
+The standard pathway retains the acquired-reference-slice crossing rule.
+`z_medulla_max(mask, affine)` identifies the acquired slice containing the
+medulla voxel center with maximum physical world Z (toward the head), rather
+than assuming that the largest array index is superior. The pons/medulla
+non-overlap reference likewise uses anatomical superior medulla and inferior
+pons endpoints. Shared-slice medians and integer midpoint conversion remain.
+An oblique acquired slice remains oblique and is not a true anatomical axial
+plane. The reference slice is the slice containing the anatomical endpoint.
+
+Among crossing components, centroid proximity to the image-center world-X
+reference determines selection. When none crosses, the standard fallback
+compares each component's minimum world Z (its inferior voxel-center boundary)
+with superior medulla world Z. It remains a one-dimensional boundary rule, not
+the incomplete pathway's combined centroid X-Z distance. Both pathways now use
+the affine-derived geometric image center, with `(shape - 1) / 2` voxel indices.
+The image center is a reference and is not an estimated anatomical midline.
+Physical distances assume NIfTI affine spatial units are millimeters.
+
+Equivalent flips and permutations of the same spatial masks should produce
+spatially identical corrected outputs, including for oblique acquisitions.
+Selections can change from the legacy script when its array-direction or
+half-voxel image-center assumptions affected the result. Re-evaluate the study
+masks before updating reported performance. Current behavior does not establish
+that prior masks were affected.
+
+The measurement script already losslessly reorients input masks toward RAS.
+It does not deoblique them. Its CSV now records `measurement_plane_basis` and
+`max_obliquity_degrees`, and reports residual obliquity when applicable. Existing
+volume and chord measurements retain their acquisition-plane definitions.
+
+Orientation regression tests use synthetic masks and temporary files:
+
+```bash
+python -B -m unittest discover -s tests -v
+```
+
+
 Examples of false positive and correction:
 
 

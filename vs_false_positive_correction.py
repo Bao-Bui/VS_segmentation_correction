@@ -39,9 +39,14 @@ Correction policy
         - Medulla only: use the most superior point of the medulla (label 3).
    c. Any other unusable brainstem pattern is left unchanged.
 
-The incomplete-brainstem fallback uses the NIfTI affine to define
-superior/inferior and left/right in world coordinates, so it does not assume
-that increasing array z-index always means superior.
+Both masks are processed in a losslessly reoriented RAS working view. No
+interpolation or resampling is performed. The NIfTI affine determines physical
+superior/inferior and left/right positions, including for oblique acquisitions.
+The complete pathway still tests crossing of acquired reference slices. Its
+medulla reference is the slice containing the physically most superior medulla
+voxel center, which need not have the largest slice index in an oblique image.
+Corrected masks are transformed back to the original tumor-mask storage order.
+Distances assume affine spatial units are millimeters, as in the input NIfTIs.
 """
 
 import argparse
@@ -85,30 +90,77 @@ def save_binary_mask(mask: np.ndarray, reference_img, out_path: Path):
 
 
 # ───────────────────────── Brainstem Helpers ───────────────────────────
-def z_medulla_max(bs: np.ndarray) -> int:
-    """Original voxel-index helper retained for the complete-mask pathway."""
-    zs = np.where(bs == 3)[2]
-    if zs.size == 0:
-        raise RuntimeError("No medulla voxels (label 3) in brain-stem mask!")
-    return int(zs.max())
+def canonical_working_view(data: np.ndarray, affine: np.ndarray):
+    """Losslessly reorder/flip a 3D array toward RAS and return its inverse.
+
+    RAS specifies axis ordering and direction. Oblique acquired planes remain
+    oblique; anatomical extrema must still be computed with the affine.
+    """
+    affine = np.asarray(affine, dtype=float)
+    if data.ndim != 3:
+        raise ValueError(f"Expected a 3D mask, got shape {data.shape}")
+    if (affine.shape != (4, 4) or not np.all(np.isfinite(affine))
+            or not np.allclose(affine[3], [0, 0, 0, 1])
+            or np.linalg.matrix_rank(affine[:3, :3]) != 3):
+        raise ValueError("Mask has an invalid or singular spatial affine")
+    native = nib.orientations.io_orientation(affine)
+    ras = nib.orientations.axcodes2ornt(("R", "A", "S"))
+    forward = nib.orientations.ornt_transform(native, ras)
+    inverse = nib.orientations.ornt_transform(ras, native)
+    working = nib.orientations.apply_orientation(data, forward)
+    working_affine = affine @ nib.orientations.inv_ornt_aff(forward, data.shape)
+    return working, working_affine, inverse
 
 
-def z_medulla_pons_overlap(bs: np.ndarray) -> int:
-    """Original voxel-index helper retained for the complete-mask pathway."""
+def anatomical_extreme_slice(bs: np.ndarray, affine: np.ndarray,
+                             label_id: int, mode: str) -> int:
+    """Acquired axis-2 slice containing a label's anatomical Z extremum.
+
+    Inputs use the common RAS working view. For oblique data, the voxel with
+    maximum world Z can occur before the maximum occupied slice index.
+    Extrema refer to voxel centers, consistently with world_z_extreme().
+    """
+    voxels = np.argwhere(bs == label_id)
+    if voxels.size == 0:
+        raise RuntimeError(f"No brainstem voxels for label {label_id}")
+    world_z = nib.affines.apply_affine(affine, voxels)[:, 2]
+    if mode == "superior":
+        index = np.argmax(world_z)
+    elif mode == "inferior":
+        index = np.argmin(world_z)
+    else:
+        raise ValueError("mode must be 'inferior' or 'superior'")
+    return int(voxels[index, 2])
+
+
+def z_medulla_max(bs: np.ndarray, affine: np.ndarray) -> int:
+    """Slice containing the anatomically superior medulla voxel center.
+
+    The legacy function name is retained, but maximum ARRAY index is no longer
+    assumed to mean superior. Call on the common RAS working view.
+    """
+    return anatomical_extreme_slice(bs, affine, label_id=3, mode="superior")
+
+
+def z_medulla_pons_overlap(bs: np.ndarray, affine: np.ndarray) -> int:
+    """Junction reference in the common RAS acquired-slice coordinates.
+
+    Preserve the integer median of shared acquired slices. Without overlap,
+    use the integer midpoint between the slices containing the physically
+    superior medulla and physically inferior pons endpoints.
+    """
     z_med = np.unique(np.where(bs == 3)[2])
     z_pon = np.unique(np.where(bs == 2)[2])
-
     if z_med.size == 0:
         raise RuntimeError("No medulla voxels (label 3) in brain-stem mask!")
     if z_pon.size == 0:
         raise RuntimeError("No pons voxels (label 2) in brain-stem mask!")
-
     overlap = np.intersect1d(z_med, z_pon)
     if overlap.size:
         return int(np.median(overlap))
-
-    # Original fallback: midpoint between pons and medulla extents.
-    return int(0.5 * (z_med.max() + z_pon.min()))
+    medulla_superior = z_medulla_max(bs, affine)
+    pons_inferior = anatomical_extreme_slice(bs, affine, 2, "inferior")
+    return int(0.5 * (medulla_superior + pons_inferior))
 
 
 def world_z_extreme(bs: np.ndarray, affine: np.ndarray,
@@ -199,14 +251,6 @@ def connected_components(mask: np.ndarray):
     return labeled, n, slices
 
 
-def centroid_x(labeled: np.ndarray, label_id: int) -> float:
-    # weight=1 everywhere => geometric centroid
-    cx, _, _ = ndi.center_of_mass(
-        np.ones_like(labeled, dtype=np.uint8), labeled, label_id
-    )
-    return float(cx)
-
-
 def centroid_world_xz(labeled: np.ndarray,
                       label_id: int,
                       affine: np.ndarray):
@@ -238,8 +282,18 @@ def choose_component_complete(
     labeled,
     pontomedullary_z,
     medulla_z,
-    mid_x,
+    affine,
+    medulla_z_world,
 ):
+    """Preserve acquired-slice crossing, then rank with anatomical distances.
+
+    Crossing candidates use centroid-to-image-center world-X distance. If
+    none crosses either reference slice, retain the original inferior-boundary
+    fallback using each component's minimum world Z relative to superior
+    medulla world Z. This remains a one-dimensional fallback, not a combined
+    centroid X-Z distance or shortest distance from the whole component.
+    """
+    midline_x_world = image_midline_world_x(labeled.shape, affine)
     z_lower, z_upper = sorted(
         (float(pontomedullary_z), float(medulla_z))
     )
@@ -260,10 +314,12 @@ def choose_component_complete(
     if candidates:
         return min(
             candidates,
-            key=lambda lb: abs(centroid_x(labeled, lb) - mid_x),
+            key=lambda lb: abs(
+                centroid_world_xz(labeled, lb, affine)[0] - midline_x_world
+            ),
         )
 
-    # Preserve the original medulla-based fallback.
+    # Preserve the inferior-boundary objective, using physical anatomy.
     best = None
     best_dist = np.inf
 
@@ -271,8 +327,13 @@ def choose_component_complete(
         if sl is None:
             continue
 
-        z0 = sl[2].start
-        dist = abs(z0 - medulla_z)
+        voxels_local = np.argwhere(labeled[sl] == idx)
+        offset = np.array([axis_slice.start for axis_slice in sl])
+        voxels = voxels_local + offset
+        inferior_world_z = float(
+            nib.affines.apply_affine(affine, voxels)[:, 2].min()
+        )
+        dist = abs(inferior_world_z - medulla_z_world)
 
         if dist < best_dist:
             best = idx
@@ -316,7 +377,10 @@ def process_case(tumor_path: Path, brain_path: Path, out_path: Path):
     try:
         # IMPORTANT: count tumor components BEFORE requiring a brainstem mask.
         tumor_mask, tumor_img = load_bool(tumor_path)
-        labeled, n_comp, slcs = connected_components(tumor_mask)
+        tumor_working, working_affine, restore_orientation = (
+            canonical_working_view(tumor_mask, tumor_img.affine)
+        )
+        labeled, n_comp, slcs = connected_components(tumor_working)
 
         if n_comp == 0:
             raise RuntimeError("Empty tumor mask")
@@ -350,28 +414,42 @@ def process_case(tumor_path: Path, brain_path: Path, out_path: Path):
                 f"({n_comp} components; affine mismatch with brainstem mask)"
             )
 
+        brainstem, brainstem_affine, _ = canonical_working_view(
+            brainstem, brain_img.affine
+        )
+        if brainstem.shape != tumor_working.shape:
+            raise RuntimeError("Inconsistent canonical tumor/brainstem geometry")
+
         has_pons = np.any(brainstem == 2)
         has_medulla = np.any(brainstem == 3)
 
         if has_pons and has_medulla:
             # Complete enough for the original correction pathway.
-            medulla_z = z_medulla_max(brainstem)
-            pontomedullary_z = z_medulla_pons_overlap(brainstem)
+            medulla_z = z_medulla_max(brainstem, brainstem_affine)
+            pontomedullary_z = z_medulla_pons_overlap(brainstem, brainstem_affine)
+            medulla_z_world = world_z_extreme(
+                brainstem, brainstem_affine, labels=(3,), mode="superior"
+            )
             
             keep = choose_component_complete(
                 slcs,
                 labeled,
                 pontomedullary_z,
                 medulla_z,
-                mid_x=tumor_mask.shape[0] / 2,
+                affine=working_affine,
+                medulla_z_world=medulla_z_world,
             )
 
-            mode = "standard pons+medulla reference"
+            mode = (
+                "standard pons+medulla reference; RAS acquired slices "
+                f"junction={pontomedullary_z}, medulla={medulla_z}; "
+                f"superior medulla world Z={medulla_z_world:.3f} mm"
+            )
 
         else:
             # Incomplete brainstem fallback.
             target_z_world, reference_name = incomplete_brainstem_reference(
-                brainstem, brain_img.affine
+                brainstem, brainstem_affine
             )
 
             if target_z_world is None:
@@ -382,12 +460,12 @@ def process_case(tumor_path: Path, brain_path: Path, out_path: Path):
                 )
 
             midline_x_world = image_midline_world_x(
-                tumor_mask.shape, tumor_img.affine
+                tumor_working.shape, working_affine
             )
             keep, distance_mm = choose_component_incomplete(
                 labeled,
                 n_comp,
-                tumor_img.affine,
+                working_affine,
                 midline_x_world,
                 target_z_world,
             )
@@ -399,7 +477,12 @@ def process_case(tumor_path: Path, brain_path: Path, out_path: Path):
         if keep is None:
             raise RuntimeError("Could not select a tumor component to preserve")
 
-        cleaned = (labeled == keep).astype(np.uint8)
+        cleaned_working = (labeled == keep).astype(np.uint8)
+        cleaned = nib.orientations.apply_orientation(
+            cleaned_working, restore_orientation
+        )
+        if cleaned.shape != tumor_mask.shape:
+            raise RuntimeError("Failed to restore original tumor-mask geometry")
         save_binary_mask(cleaned, tumor_img, out_path)
 
         return (
