@@ -174,11 +174,6 @@ saggital plane passing through the affine-derived geometric image center.
 The image center is a reference and is not an estimated anatomical midline.
 Physical distances assume NIfTI affine spatial units are millimeters.
 
-The measurement script already losslessly reorients input masks toward RAS.
-It does not deoblique them. Its CSV now records `measurement_plane_basis` and
-`max_obliquity_degrees`, and reports residual obliquity when applicable. Existing
-volume and chord measurements retain their acquisition-plane definitions.
-
 
 Examples of false positive and correction:
 
