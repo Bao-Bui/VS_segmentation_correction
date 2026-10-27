@@ -170,16 +170,9 @@ When none overlaps, the standard fallback compares each component's minimum
 world Z (its inferior voxel-center boundary) with superior medulla world Z.
 It remains a one-dimensional boundary rule, not the incomplete pathway's
 combined centroid X-Z distance. Both pathways now use
-the affine-derived geometric image center, with `(shape - 1) / 2` voxel indices.
+saggital plane passing through the affine-derived geometric image center.
 The image center is a reference and is not an estimated anatomical midline.
 Physical distances assume NIfTI affine spatial units are millimeters.
-
-Equivalent flips and permutations of the same spatial masks should produce
-spatially identical corrected outputs, including for oblique acquisitions.
-Selections can change from the legacy script when its array-direction or
-half-voxel image-center assumptions affected the result. Re-evaluate the study
-masks before updating reported performance. Current behavior does not establish
-that prior masks were affected.
 
 The measurement script already losslessly reorients input masks toward RAS.
 It does not deoblique them. Its CSV now records `measurement_plane_basis` and
