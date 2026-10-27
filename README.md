@@ -153,22 +153,23 @@ compatible tumor/brainstem pair. Only axis permutations and flips are applied.
 No interpolation, resampling, or registration is performed, and the corrected
 mask is restored to the original tumor image's array order, affine, and header.
 
-The standard pathway retains the acquired-reference-slice crossing rule.
-`z_medulla_max(mask, affine)` identifies the acquired slice containing the
-medulla voxel center with maximum physical world Z (toward the head), rather
-than assuming that the largest array index is superior. The pons/medulla
-non-overlap reference likewise uses anatomical superior medulla and inferior
-pons endpoints. Shared-slice medians and integer midpoint conversion remain.
-An oblique acquired slice remains oblique and is not a true anatomical axial
-plane. The reference slice is the slice containing the anatomical endpoint.
-The shared `anatomical_z_extreme` helper returns both the endpoint world-Z
-coordinate and its acquired slice index in one search.
+The standard pathway uses physical world-Z coordinates throughout, including
+for oblique acquisitions. `anatomical_z_extreme(mask, affine, labels, mode)`
+returns only the endpoint world-Z coordinate at voxel centers. The pontomedullary junction is
+the midpoint of the intersection of the medulla and pons world-Z ranges. If
+those ranges do not overlap, it is the midpoint between superior medulla and
+inferior pons. References retain floating-point precision without integer
+slice rounding.
 
-Among crossing components, centroid proximity to the image-center world-X
-reference determines selection. When none crosses, the standard fallback
-compares each component's minimum world Z (its inferior voxel-center boundary)
-with superior medulla world Z. It remains a one-dimensional boundary rule, not
-the incomplete pathway's combined centroid X-Z distance. Both pathways now use
+Each component's world-Z range is calculated from its actual voxel centers.
+A component qualifies if its range overlaps any part of the interval between
+the junction and superior medulla, including a component lying entirely
+inside that interval or touching either endpoint. Among qualifying components,
+centroid proximity to the image-center world-X reference determines selection.
+When none overlaps, the standard fallback compares each component's minimum
+world Z (its inferior voxel-center boundary) with superior medulla world Z.
+It remains a one-dimensional boundary rule, not the incomplete pathway's
+combined centroid X-Z distance. Both pathways now use
 the affine-derived geometric image center, with `(shape - 1) / 2` voxel indices.
 The image center is a reference and is not an estimated anatomical midline.
 Physical distances assume NIfTI affine spatial units are millimeters.
