@@ -211,7 +211,7 @@ Let $P$ and $G$ denote the predicted and manual foreground voxel sets, and $V_P$
 | DSC | $\frac{2\lvert P\cap G\rvert}{\lvert P\rvert+\lvert G\rvert}$ |
 | Absolute RVE | $\frac{\lvert V_P-V_G\rvert}{V_G}$ |
 | ASSD (mm) | $\frac{\sum_i a_i+\sum_j b_j}{n_P+n_G}$ |
-| HD95 (mm) | $\max\{Q_{0.95}(a),\,Q_{0.95}(b)\}$ |
+| HD95 (mm) | $\max\({Q_{0.95}(a)\,Q_{0.95}(b)\})$ |
 
 RVE is a fraction (0.10 = 10%). Surface distances use six-face-neighbor boundary voxel centers and physical image geometry. $Q_{0.95}$ denotes the 95th percentile with linear interpolation.
 
