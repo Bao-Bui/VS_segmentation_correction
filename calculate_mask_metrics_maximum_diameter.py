@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Calculate tumor volume and maximum CONTOUR-TO-CONTOUR INTERNAL CHORD diameters
+Calculate tumor volume and maximum diameters
 for all NIfTI masks in a folder.
 
 Definition
@@ -17,7 +17,7 @@ For each reoriented axial, sagittal, and coronal 2D slice:
 3. Test candidate endpoint pairs from longest to shortest.
 4. Accept a candidate only if the ENTIRE straight line segment lies within
    the tumor polygon.
-5. Keep the longest accepted segment as the slice's maximum internal chord.
+5. Keep the longest accepted segment as the slice's maximum diameter.
 6. Take the maximum across slices for each anatomical plane.
 7. Take the maximum of axial, sagittal, and coronal.
 
@@ -29,11 +29,11 @@ Dependencies
 
 Usage
 -----
-    python calculate_mask_metrics_internal_chord_contour.py "C:\\path\\to\\post_processed"
+    python calculate_mask_metrics_maximum_diameter.py "C:\\path\\to\\post_processed"
 
 Output
 ------
-    post_processed_mask_metrics_internal_chord_contour.csv
+    post_processed_mask_metrics_maximum_diameter.csv
 """
 
 import argparse
@@ -47,7 +47,7 @@ from shapely.geometry import LineString, Polygon, MultiPolygon, box
 from shapely.ops import unary_union
 
 
-OUTPUT_CSV_NAME = "post_processed_mask_metrics_internal_chord_contour.csv"
+OUTPUT_CSV_NAME = "post_processed_mask_metrics_maximum_diameter.csv"
 GEOMETRY_TOL = 1e-9
 
 
@@ -213,9 +213,9 @@ def outer_contour_vertices_rc(geom):
     return pts
 
 
-def max_internal_chord_slice_mm(slice_mask: np.ndarray,
-                                vec_row: np.ndarray,
-                                vec_col: np.ndarray):
+def max_slice_diameter_mm(slice_mask: np.ndarray,
+                          vec_row: np.ndarray,
+                          vec_col: np.ndarray):
     geom = build_exact_mask_polygon(slice_mask)
 
     if geom is None or geom.is_empty:
@@ -253,9 +253,9 @@ def max_internal_chord_slice_mm(slice_mask: np.ndarray,
     return 0.0
 
 
-def max_plane_internal_chord_mm(mask: np.ndarray,
-                                affine: np.ndarray,
-                                fixed_axis: int):
+def max_plane_diameter_mm(mask: np.ndarray,
+                          affine: np.ndarray,
+                          fixed_axis: int):
     vec_row, vec_col = inplane_vectors(affine, fixed_axis)
     best = 0.0
 
@@ -265,7 +265,7 @@ def max_plane_internal_chord_mm(mask: np.ndarray,
         if np.count_nonzero(sl) == 0:
             continue
 
-        d_mm = max_internal_chord_slice_mm(sl, vec_row, vec_col)
+        d_mm = max_slice_diameter_mm(sl, vec_row, vec_col)
 
         if d_mm > best:
             best = d_mm
@@ -284,9 +284,9 @@ def calculate_metrics(mask: np.ndarray, affine: np.ndarray):
     if foreground_voxels == 0:
         axial_mm = sagittal_mm = coronal_mm = 0.0
     else:
-        axial_mm = max_plane_internal_chord_mm(mask, affine, fixed_axis=2)
-        sagittal_mm = max_plane_internal_chord_mm(mask, affine, fixed_axis=0)
-        coronal_mm = max_plane_internal_chord_mm(mask, affine, fixed_axis=1)
+        axial_mm = max_plane_diameter_mm(mask, affine, fixed_axis=2)
+        sagittal_mm = max_plane_diameter_mm(mask, affine, fixed_axis=0)
+        coronal_mm = max_plane_diameter_mm(mask, affine, fixed_axis=1)
 
     axial_cm = axial_mm / 10.0
     sagittal_cm = sagittal_mm / 10.0
@@ -327,7 +327,7 @@ def nifti_files(folder: Path):
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "Calculate volume and maximum contour-to-contour INTERNAL CHORD "
+            "Calculate volume and maximum "
             "diameters for post-processed NIfTI tumor masks."
         )
     )
@@ -367,7 +367,7 @@ def main():
 
     print(f"Found {len(files)} mask(s).")
     print(
-        "Calculating contour-to-contour INTERNAL CHORD diameters "
+        "Calculating maximum diameters "
         "(no convex hull / no alpha shape)..."
     )
 
