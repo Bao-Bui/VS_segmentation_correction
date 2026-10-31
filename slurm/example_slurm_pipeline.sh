@@ -207,7 +207,7 @@ python /path/to/vs_false_positive_correction.py \
 
 echo "=== Step 4/4: Calculating tumor metrics ==="
 
-python /path/to/calculate_mask_metrics_maximum_diameter.py "$POSTPROCESSED_OUTPUT"
+python /path/to/calculate_maximum_diameter.py "$POSTPROCESSED_OUTPUT"
 
 echo "=== Pipeline complete ==="
 echo "Raw VS masks:          $RAW_TUMOR_OUTPUT"

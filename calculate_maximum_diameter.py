@@ -29,7 +29,7 @@ Dependencies
 
 Usage
 -----
-    python calculate_mask_metrics_maximum_diameter.py "C:\\path\\to\\post_processed"
+    python calculate_maximum_diameter.py "C:\\path\\to\\post_processed"
 
 Output
 ------

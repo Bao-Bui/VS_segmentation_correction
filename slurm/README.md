@@ -7,7 +7,7 @@ For users running this workflow on a high-performance computing (HPC) cluster ma
 1. **Vestibular schwannoma segmentation** using the Kujawa et al. nnU-Net v2 model.
 2. **Brainstem segmentation** using the Gesierich et al. nnU-Net v1 model.
 3. **False-positive correction** using `vs_false_positive_correction.py`.
-4. **Tumor size and diameter calculation** using `calculate_mask_metrics_maximum_diameter.py`.
+4. **Tumor size and diameter calculation** using `calculate_maximum_diameter.py`.
 
 The script is intended as a **template rather than a cluster-independent executable**. SLURM configurations, software modules, storage locations, and GPU resource syntax vary between HPC systems. Users should therefore modify the paths and SLURM resource requests before submitting the job.
 
@@ -104,7 +104,7 @@ python /path/to/vs_false_positive_correction.py \
 and
 
 ```bash
-python /path/to/calculate_mask_metrics_maximum_diameter.py "$POSTPROCESSED_OUTPUT"
+python /path/to/calculate_maximum_diameter.py "$POSTPROCESSED_OUTPUT"
 ```
 
 For example, if this repository has been cloned to `/path/to/VS_segmentation_correction`, these may be changed to:
@@ -116,7 +116,7 @@ python /path/to/VS_segmentation_correction/vs_false_positive_correction.py
 and
 
 ```bash
-python /path/to/VS_segmentation_correction/calculate_mask_metrics_maximum_diameter.py
+python /path/to/VS_segmentation_correction/calculate_maximum_diameter.py
 ```
 
 ## 5. Configure Conda on your HPC

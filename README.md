@@ -182,11 +182,11 @@ Examples of false positive and correction:
 
 ## Step 4: Tumor Volume and Maximum Diameter
 
-[calculate_mask_metrics_maximum_diameter.py](calculate_mask_metrics_maximum_diameter.py) calculates volume and maximum diameter in the axial, sagittal, and coronal acquisition planes after lossless RAS reorientation. Diameters are measured between contour points along a straight segment contained within the tumor mask; oblique scans are not resampled.
+[calculate_maximum_diameter.py](calculate_maximum_diameter.py) calculates volume and maximum diameter in the axial, sagittal, and coronal acquisition planes after lossless RAS reorientation. Diameters are measured between contour points along a straight segment contained within the tumor mask; oblique scans are not resampled.
 
 ```bash
 pip install nibabel numpy shapely
-python calculate_mask_metrics_maximum_diameter.py /path/to/post_processed
+python calculate_maximum_diameter.py /path/to/post_processed
 ```
 
 Results are saved in the mask folder as `post_processed_mask_metrics_maximum_diameter.csv`.
@@ -198,10 +198,21 @@ Results are saved in the mask folder as `post_processed_mask_metrics_maximum_dia
 
 ## Segmentation Performance Metrics
 
-Requires `numpy`, `nibabel`, `scipy`, and `SimpleITK`. Compare same-named NIfTI masks on matching grids:
+Compare same-named NIfTI masks on matching grids:
 
 ```bash
 python dice_rve_assd_hd95_calculation.py --prediction /path/to/predictions --manual /path/to/manual_masks --out /path/to/results
 ```
 
-DSC measures overlap; absolute RVE is |predicted volume − manual volume| / manual volume (a fraction). ASSD is the pooled mean of both directed surface-distance sets; HD95 is the larger directed 95th percentile. Surface distances use six-neighbor boundary voxel centers and physical image geometry (mm). Outputs are `case_metrics.csv` and `metric_descriptive_statistics.csv`.
+Let $P$ and $G$ denote the predicted and manual foreground voxel sets, and $V_P$ and $V_G$ their volumes. For their $n_P$ and $n_G$ surface points, $a_i$ and $b_j$ are the nearest-neighbor distances from prediction to manual and from manual to prediction, respectively.
+
+| Metric | Formula |
+| --- | --- |
+| DSC | $\frac{2\lvert P\cap G\rvert}{\lvert P\rvert+\lvert G\rvert}$ |
+| Absolute RVE | $\frac{\lvert V_P-V_G\rvert}{V_G}$ |
+| ASSD (mm) | $\frac{\sum_i a_i+\sum_j b_j}{n_P+n_G}$ |
+| HD95 (mm) | $\max\{Q_{0.95}(a),\,Q_{0.95}(b)\}$ |
+
+RVE is a fraction (0.10 = 10%). Surface distances use six-face-neighbor boundary voxel centers and physical image geometry. $Q_{0.95}$ denotes the 95th percentile with linear interpolation.
+
+Outputs: `case_metrics.csv` (per case) and `metric_descriptive_statistics.csv` (summary statistics).
